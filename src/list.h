@@ -15,14 +15,13 @@ class s21_list {
 
 private:
     struct ListNode {
-    ListNode* prev;
-    ListNode* next;
-    value_type data;
-    ListNode() : data(), prev(nullptr), next(nullptr) {}
+        ListNode* prev;
+        ListNode* next;
+        value_type data;
+        ListNode() : data(), prev(nullptr), next(nullptr) {}
     };
-
-    T* arr;
-    int size_;
+    // T* arr;
+    // int size_;
 
 public:
     using Node = ListNode;
@@ -33,7 +32,7 @@ private:
     Node* _back;
 
 public:
-    class Iterator;
+    class ConstIterator;
     s21_list(int size = 1) : size_(size) {
         arr = new T[size];
     }
@@ -44,43 +43,71 @@ public:
         return arr[0];
     }
 
-    Iterator begin() { return Iterator(_front); }
-    Iterator end() { return Iterator(_front + _size); }
+    ConstIterator begin() { return ConstIterator(_front); }
+    ConstIterator end() { return ConstIterator(_front + _size); }
 
-    // Iterator begin() { return arr; }
-    // Iterator end() { return arr+size_; }
+    // ConstIterator begin() { return arr; }
+    // ConstIterator end() { return arr+size_; }
 
     // friend ostream& operator<< (ostream& s, const s21_list<T>& size);
 
-    class Iterator {
-        Node* data_;
-        pointer _node;
-        // T* cur;
+    class ConstIterator {
+    protected:
+        Node* node_;
+        
     public:
-        // Iterator(T* first) : cur(first) {}
+        ConstIterator() = default;
+        // ConstIterator() { this.node = nullptr; } // либо то что выше, либо это
+        ConstIterator(Node* data) { this->node_ = data; }
+        ConstIterator(const ConstIterator& other) : node_(other.node_) {}
+        ~ConstIterator() {}
 
-        Iterator() = default;
-        explicit Iterator(pointer ptr) { _node = ptr; }
-        value_type& operator*() const { return _node->data; }
-        pointer operator->() { return _node; }
-
-        Iterator& operator++() {
-            _node = _node->next;
+        ConstIterator& operator++() {
+            this->node_ = this->node_->next;
             return *this;
         }
 
-        T& operator+ (int n) { return *(cur + n); }
-        T& operator- (int n) { return *(cur - n); }
+        ConstIterator& operator++ () { 
+            ConstIterator tmp(this->node_);
+            this->node_ = this->node_->next;
+            return tmp;
+        }
 
-        T& operator++ (int) { return *cur++; }
-        T& operator-- (int) { return *cur--; }
-        T& operator++ () { return *++cur; }
-        T& operator-- () { return *--cur; }
+        ConstIterator& operator--() {
+            this->node_ = this->node_->prev;
+            return *this;
+        }
 
-        bool operator!= (const Iterator& it) { return cur != it.cur; }
-        bool operator== (const Iterator& it) { return cur == it.cur; }
-        T& operator* () { return *cur; };
+        ConstIterator& operator-- () { 
+            ConstIterator tmp(this->node_);
+            this->node_ = this->node_->prev;
+            return tmp;
+        }
+
+        ConstIterator& operator+ (size_type n) { // пересмотреть потом
+            ConstIterator tmp(this->node_->data + n);
+            return tmp; 
+        }
+        ConstIterator& operator- (size_type n) {  // пересмотреть потом
+            ConstIterator tmp(this->node_->data - n);
+            return tmp;  
+        }
+
+        bool operator!= (const ConstIterator& other) { return !(this->node_ == other.node_); }
+        bool operator== (const ConstIterator& other) { return this->node_ == other.node_; }
+
+        ConstIterator& operator* () { 
+            if (this->node_ == nullptr) 
+                throw std::invalid_argument("No data");
+            return this->node_->data; 
+        };
     };
+
+    class Iterator : public ConstIterator {
+    public:
+        Iterator() : ConstIterator() {}
+
+    }
 };
 
 #endif  // SRC_LIST_H_
