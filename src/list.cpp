@@ -6,12 +6,13 @@ using namespace std;
 // list<int>::iterator it;
 
 int main() {
-    s21_list<int> arr(3);
-    arr[0] = 1;
-    arr[1] = 2;
-    arr[2] = 3;
+    list<int> arr(3);
+    auto it = list<int>::iterator(arr.begin());
+    arr[it] = 1;
+    arr[it++] = 2;
+    arr[it++] = 3;
 
-    auto it = s21_list<int>::Iterator(arr.begin());
+    
 
     cout << "2: " << it + 2 << endl;
 
