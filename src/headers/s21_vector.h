@@ -27,7 +27,7 @@ class vector {
  public:
   vector() : size_(0), capacity_(0), buffer_(nullptr) {}
 
-  explicit vector(size_type size) {
+  vector(size_type size) {
     this->size_ = size;
     capacity_ = size;
     buffer_ = new value_type[size_];
@@ -36,51 +36,45 @@ class vector {
     }
   }
 
-  vector(std::initializer_list<value_type> const &init)
-    : vector(init.size()) {
+  vector(std::initializer_list<value_type> const &init) : vector(init.size()) {
     std::copy(init.begin(), init.end(), buffer_);
   }
 
-  vector(const vector &rhs) {
-    size_ = rhs.size_;
-    capacity_ = rhs.capacity_;
+  vector(const vector &other) {
+    size_ = other.size_;
+    capacity_ = other.capacity_;
     buffer_ = nullptr;
     if (size_ > 0) {
       buffer_ = new value_type[capacity_];
     }
-    std::copy(rhs.begin(), rhs.end(), buffer_);
+    std::copy(other.begin(), other.end(), buffer_);
   }
 
-  vector(vector &&rhs) noexcept {
-    size_ = std::exchange(rhs.size_, 0);
-    capacity_ = std::exchange(rhs.capacity_, 0);
-    buffer_ = std::exchange(rhs.buffer_, nullptr);
+  vector(vector &&other)
+      : size_(other.size_), capacity_(other.capacity_), buffer_(other.buffer_) {
+    other.buffer_ = nullptr;
+    other.size_ = 0;
+    other.capacity_ = 0;
   }
 
-  ~vector() { delete[] buffer_; }
-
-  constexpr vector &operator=(vector &&rhs) noexcept {
-    if (this != &rhs) {
-      size_ = std::exchange(rhs.size_, 0);
-      capacity_ = std::exchange(rhs.capacity_, 0);
-      buffer_ = std::exchange(rhs.buffer_, nullptr);
-    }
-
-    return *this;
-  }
-
-  constexpr vector &operator=(const vector &rhs) {
-    if (this != &rhs) {
+  ~vector() {
+    if (buffer_) {
       delete[] buffer_;
-
-      if (rhs.size_ > 0) {
-        buffer_ = new value_type[rhs.capacity_];
-        std::copy(rhs.begin(), rhs.end(), buffer_);
-      }
-      size_ = rhs.size_;
-      capacity_ = rhs.capacity_;
     }
+    size_ = 0;
+    capacity_ = 0;
+    buffer_ = nullptr;
+  }
 
+  vector &operator=(vector &&other) {
+    if (this != &other) {
+      buffer_ = other.buffer_;
+      size_ = other.size_;
+      capacity_ = other.capacity_;
+      other.buffer_ = nullptr;
+      other.size_ = 0;
+      other.capacity_ = 0;
+    }
     return *this;
   }
 

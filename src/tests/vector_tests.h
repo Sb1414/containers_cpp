@@ -110,8 +110,7 @@ TEST(VectorTest, MoveAssignmentOperator_EmptyVector) {
 
 TEST(VectorTest, CopyAssignmentOperator_Size) {
   s21::vector<int> vec{1, 2, 3, 4, 5};
-  s21::vector<int> vec_copy;
-  vec_copy = vec;
+  s21::vector<int> vec_copy = vec;
 
   ASSERT_EQ(vec_copy.size(), 5);
   ASSERT_EQ(vec_copy.capacity(), 5);
@@ -132,8 +131,6 @@ TEST(VectorTest, CopyAssignmentOperator_Size) {
 
 TEST(VectorTest, CopyAssignmentOperator_SelfAssignment) {
   s21::vector<int> vec{1, 2, 3, 4, 5};
-  vec = vec;
-
   ASSERT_EQ(vec.size(), 5);
   ASSERT_EQ(vec.capacity(), 5);
   ASSERT_TRUE(vec.data() != nullptr);
