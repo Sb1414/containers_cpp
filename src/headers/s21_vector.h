@@ -79,58 +79,38 @@ class vector {
   }
 
  public:
-  constexpr reference at(size_type pos) {
-    if (pos >= size_)
-      throw std::out_of_range("s21::vector::at The index is out of range");
-
+  reference at(size_type pos) {
+    if (pos >= size_) throw std::out_of_range("at The index is out of range");
     return buffer_[pos];
   }
 
-  constexpr const_reference at(size_type pos) const {
-    if (pos >= size_)
-      throw std::out_of_range("s21::vector::at The index is out of range");
-
+  const_reference at(size_type pos) const {
+    if (pos >= size_) throw std::out_of_range("at The index is out of range");
     return buffer_[pos];
   }
 
-  constexpr reference operator[](size_type pos) { return at(pos); }
+  reference operator[](size_type pos) { return at(pos); }
 
-  constexpr const_reference operator[](size_type pos) const { return at(pos); }
+  const_reference operator[](size_type pos) const { return at(pos); }
 
-  constexpr reference front() {
-    if (size_ == 0)
-      throw std::out_of_range(
-          "s21::vector::front Using methods on a "
-          "zero sized container results "
-          "in the UB");
+  reference front() {
+    if (size_ == 0) throw std::out_of_range("the vector is empty");
     return *begin();
   }
 
-  constexpr const_reference front() const {
-    if (size_ == 0)
-      throw std::out_of_range(
-          "s21::vector::front Using methods on a "
-          "zero sized container results "
-          "in the UB");
+  const_reference front() const {
+    if (size_ == 0) throw std::out_of_range("the vector is empty");
     return *begin();
   }
 
-  constexpr reference back() {
-    if (size_ == 0)
-      throw std::out_of_range(
-          "s21::vector::back Using methods on a zero "
-          "sized container results "
-          "in the UB");
-    return *std::prev(end());
+  reference back() {
+    if (size_ == 0) throw std::out_of_range("the vector is empty");
+    return buffer_[size_ - 1];
   }
 
-  constexpr const_reference back() const {
-    if (size_ == 0)
-      throw std::out_of_range(
-          "s21::vector::back Using methods on a zero "
-          "sized container results "
-          "in the UB");
-    return *std::prev(end());
+  const_reference back() const {
+    if (size_ == 0) throw std::out_of_range("the vector is empty");
+    return buffer_[size_ - 1];
   }
 
   constexpr iterator data() noexcept { return buffer_; }
