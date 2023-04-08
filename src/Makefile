@@ -4,22 +4,18 @@ GCOVFLAGS = -fprofile-arcs -ftest-coverage
 GCOV=--coverage
 OS = $(shell uname)
 
-all: test
-
-list.a:
-	$(CC) -c list.cpp -o list.o
-	ar rcs list.a list.o
+all: gcov_report
 
 test: clean
-	$(CC) $(GCOV) -c list.cpp 
-	$(CC) -c list.cpp $(CHECKFLAGS)
-	$(CC) $(GCOV) -o list list.o list.o $(CHECKFLAGS)
-	./list
+	# $(CC) $(GCOV) -c tests/all.cpp 
+	$(CC) -c tests/all.cpp $(CHECKFLAGS)
+	$(CC) $(GCOV) -o test all.o $(CHECKFLAGS)
+	./test
 
 check:
 	cp ../materials/linters/.clang-format ./
-	clang-format -i *.h *.cpp
-	clang-format -n *.h *.cpp
+	clang-format -i $(shell find . -name "*.cpp" -or -name "*.cc" -or -name "*.h" -or -name "*.h")
+	clang-format -n $(shell find . -name "*.cpp" -or -name "*.cc" -or -name "*.h" -or -name "*.h") --verbose -Werror
 	rm .clang-format
 
 leaks: test
@@ -30,7 +26,7 @@ else
 endif
 
 gcov_report: test
-	$(CC) $(CHECKFLAGS) $(GCOVFLAGS) s21_matrix_oop.cpp s21_test.cpp $(CHECKFLAGS) -o gcov_rep.out
+	$(CC) $(CHECKFLAGS) $(GCOVFLAGS) tests/all.cpp $(CHECKFLAGS) -o gcov_rep.out
 	./gcov_rep.out
 	lcov -t "gcov_rep" --output-file=coverag.info --capture --directory .
 	genhtml -o ./report coverag.info
@@ -39,6 +35,7 @@ gcov_report: test
 
 clean:
 	rm -f *.gcno *.gcda *.info *.out *.gch
+	rm -rf ./gcov_rep.out.dSYM
 	rm -rf ./report
 	rm -rf ./*.o ./*.a
 	rm -rf test
