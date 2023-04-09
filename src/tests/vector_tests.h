@@ -183,6 +183,50 @@ TEST(VectorTest, Back_EmptyVector) {
   ASSERT_THROW(vec2.back(), std::out_of_range);
 }
 
+TEST(VectorTest, ShrinkToFit) {
+  s21::vector<int> vec{1, 2, 3};
+  vec.pop_back();
+  vec.pop_back();
+  vec.shrink_to_fit();
+  EXPECT_EQ(vec.size(), vec.capacity());
+}
+
+TEST(VectorTest, ShrinkToFitTest) {
+  s21::vector<int> v{1, 2, 3, 4, 5};
+  std::vector<int> v1{1, 2, 3, 4, 5};
+  v.shrink_to_fit();
+  v1.shrink_to_fit();
+  EXPECT_EQ(v.size(), v1.size());
+  for (size_t i = 0; i < v.size(); ++i) {
+    EXPECT_EQ(v[i], v1[i]);
+  }
+}
+
+TEST(VectorTest, Clear1) {
+  std::vector<int> a;
+
+  EXPECT_DOUBLE_EQ(a.size(), 0);
+  EXPECT_DOUBLE_EQ(a.capacity(), 0);
+
+  EXPECT_NO_THROW(a.clear());
+  EXPECT_DOUBLE_EQ(a.size(), 0);
+  EXPECT_DOUBLE_EQ(a.capacity(), 0);
+}
+
+TEST(VectorTest, Clear2) {
+  s21::vector<int> v{1, 2, 3};
+  ASSERT_EQ(v.size(), 3);
+  v.clear();
+  ASSERT_EQ(v.size(), 0);
+  ASSERT_TRUE(v.empty());
+  ASSERT_EQ(v.capacity(), 3);
+}
+
+TEST(VectorTest, PopBackThrowsExceptionWhenEmpty) {
+  s21::vector<int> v;
+  EXPECT_THROW(v.pop_back(), std::out_of_range);
+}
+
 TEST(VectorTest, Back_ConstEmptyVector) {
   const s21::vector<int> vec{1, 2, 3};
   const s21::vector<int> vec2;
@@ -252,18 +296,6 @@ TEST(VectorTest, PushBack_IncreasesSizeByOne) {
   ASSERT_EQ(vec.size(), 1);
   vec.push_back(2);
   ASSERT_EQ(vec.size(), 2);
-}
-
-
-TEST(VectorTest, Clear) {
-  std::vector<int> a;
-
-  EXPECT_DOUBLE_EQ(a.size(), 0);
-  EXPECT_DOUBLE_EQ(a.capacity(), 0);
-
-  EXPECT_NO_THROW(a.clear());
-  EXPECT_DOUBLE_EQ(a.size(), 0);
-  EXPECT_DOUBLE_EQ(a.capacity(), 0);
 }
 
 TEST(VectorTest, Reserve) {
@@ -434,6 +466,17 @@ TEST(VectorTest, Emplace_InsertsElementAtSpecifiedPosition) {
   ASSERT_EQ(vec[1], 2);
   ASSERT_EQ(vec[2], 3);
   ASSERT_EQ(vec[3], 4);
+}
+
+TEST(VectorTest, EmplaceTestOneArgs) {
+  s21::vector<int> v{1, 2, 3};
+  v.emplace(v.begin(), 22);
+  ASSERT_THAT(v, testing::ElementsAre(22, 1, 2, 3));
+}
+
+TEST(VectorTest, EmplaceOutOfRangeExceptionTest) {
+  s21::vector<int> v = {1, 2, 3, 4, 5};
+  EXPECT_THROW(v.emplace(v.end() + 1, 6), std::out_of_range);
 }
 
 TEST(VectorTest, Emplace_IncreasesSizeAndCapacity) {
