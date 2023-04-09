@@ -196,17 +196,27 @@ class vector {
   }
 
   void pop_back() {
-    if (size_ == 0)
-      throw std::length_error(
-          "s21::vector::pop_back Calling pop_back on an empty container "
-          "results in UB");
+    if (size_ == 0) {
+        throw std::out_of_range("vector is empty");
+    }
     --size_;
   }
 
-  constexpr void swap(vector &other) noexcept {
-    std::swap(buffer_, other.buffer_);
-    std::swap(size_, other.size_);
-    std::swap(capacity_, other.capacity_);
+  void swap(vector& other) {
+    // Swap capacity
+    size_type tmp_cap = capacity_;
+    capacity_ = other.capacity_;
+    other.capacity_ = tmp_cap;
+
+    // Swap size
+    size_type tmp_size = size_;
+    size_ = other.size_;
+    other.size_ = tmp_size;
+
+    // Swap buffer
+    iterator tmp_buf = buffer_;
+    buffer_ = other.buffer_;
+    other.buffer_ = tmp_buf;
   }
 
   template <typename... Args>
@@ -222,23 +232,12 @@ class vector {
     return it;
   }
 
-
   template <typename... Args>
-  constexpr iterator emplace_back(Args &&... args) {
+  iterator emplace_back(Args &&... args) {
     for (auto &&item : {std::forward<Args>(args)...}) {
       push_back(item);
     }
     return end() - 1;
-  }
-
- private:
-  void ReallocVector(size_type new_capacity) {
-    iterator tmp = new value_type[new_capacity];
-    for (size_type i = 0; i < size_; ++i) tmp[i] = std::move(buffer_[i]);
-
-    delete[] buffer_;
-    buffer_ = tmp;
-    capacity_ = new_capacity;
   }
 };
 
