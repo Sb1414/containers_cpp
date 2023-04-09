@@ -193,11 +193,12 @@ class vector {
     return iterator(buffer_ + index); // возвращаем итератор на удаленный элемент
   }
 
-  constexpr void push_back(const_reference value) {
-    if (size_ == capacity_) reserve(size_ ? size_ * 2 : 1);
-
-    buffer_[size_] = value;
-    ++size_;
+  // метод добавления элемента в конец вектора
+  void push_back(const_reference value) {
+    if (size_ == capacity_) { // Если количество элементов в векторе равно емкости => не хватает места
+      reserve(2 * capacity_); // увеличиваем capacity в два раза, если не хватает места
+    }
+    buffer_[size_++] = value; // добавляем элемент в конец и увеличиваем size_
   }
 
   constexpr void push_back(value_type &&value) {
