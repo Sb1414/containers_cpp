@@ -27,7 +27,7 @@ class vector {
  public:
   vector() : size_(0), capacity_(0), buffer_(nullptr) {}
 
-  explicit vector(size_type size) {
+  vector(size_type size) {
     this->size_ = size;
     capacity_ = size;
     buffer_ = new value_type[size_];
@@ -36,191 +36,161 @@ class vector {
     }
   }
 
-  vector(std::initializer_list<value_type> const &init)
-    : vector(init.size()) {
+  vector(std::initializer_list<value_type> const &init) : vector(init.size()) {
     std::copy(init.begin(), init.end(), buffer_);
   }
 
-  vector(const vector &rhs) {
-    size_ = rhs.size_;
-    capacity_ = rhs.capacity_;
+  vector(const vector &other) {
+    size_ = other.size_;
+    capacity_ = other.capacity_;
     buffer_ = nullptr;
     if (size_ > 0) {
       buffer_ = new value_type[capacity_];
     }
-    std::copy(rhs.begin(), rhs.end(), buffer_);
+    std::copy(other.begin(), other.end(), buffer_);
   }
 
-  vector(vector &&rhs) noexcept {
-    size_ = std::exchange(rhs.size_, 0);
-    capacity_ = std::exchange(rhs.capacity_, 0);
-    buffer_ = std::exchange(rhs.buffer_, nullptr);
+  vector(vector &&other)
+      : size_(other.size_), capacity_(other.capacity_), buffer_(other.buffer_) {
+    other.buffer_ = nullptr;
+    other.size_ = 0;
+    other.capacity_ = 0;
   }
 
-  ~vector() { delete[] buffer_; }
-
-  constexpr vector &operator=(vector &&rhs) noexcept {
-    if (this != &rhs) {
-      size_ = std::exchange(rhs.size_, 0);
-      capacity_ = std::exchange(rhs.capacity_, 0);
-      buffer_ = std::exchange(rhs.buffer_, nullptr);
-    }
-
-    return *this;
-  }
-
-  constexpr vector &operator=(const vector &rhs) {
-    if (this != &rhs) {
+  ~vector() {
+    if (buffer_) {
       delete[] buffer_;
-
-      if (rhs.size_ > 0) {
-        buffer_ = new value_type[rhs.capacity_];
-        std::copy(rhs.begin(), rhs.end(), buffer_);
-      }
-      size_ = rhs.size_;
-      capacity_ = rhs.capacity_;
     }
+    size_ = 0;
+    capacity_ = 0;
+    buffer_ = nullptr;
+  }
 
+  vector &operator=(vector &&other) {
+    if (this != &other) {
+      buffer_ = other.buffer_;
+      size_ = other.size_;
+      capacity_ = other.capacity_;
+      other.buffer_ = nullptr;
+      other.size_ = 0;
+      other.capacity_ = 0;
+    }
     return *this;
   }
 
  public:
-  constexpr reference at(size_type pos) {
-    if (pos >= size_)
-      throw std::out_of_range("s21::vector::at The index is out of range");
-
+  // Vector Element access
+  reference at(size_type pos) {
+    if (pos >= size_) throw std::out_of_range("at The index is out of range");
     return buffer_[pos];
   }
 
-  constexpr const_reference at(size_type pos) const {
-    if (pos >= size_)
-      throw std::out_of_range("s21::vector::at The index is out of range");
-
+  const_reference at(size_type pos) const {
+    if (pos >= size_) throw std::out_of_range("at The index is out of range");
     return buffer_[pos];
   }
 
-  constexpr reference operator[](size_type pos) { return at(pos); }
+  reference operator[](size_type pos) { return at(pos); }
 
-  constexpr const_reference operator[](size_type pos) const { return at(pos); }
+  const_reference operator[](size_type pos) const { return at(pos); }
 
-  constexpr reference front() {
-    if (size_ == 0)
-      throw std::out_of_range(
-          "s21::vector::front Using methods on a "
-          "zero sized container results "
-          "in the UB");
+  reference front() {
+    if (size_ == 0) throw std::out_of_range("the vector is empty");
     return *begin();
   }
 
-  constexpr const_reference front() const {
-    if (size_ == 0)
-      throw std::out_of_range(
-          "s21::vector::front Using methods on a "
-          "zero sized container results "
-          "in the UB");
+  const_reference front() const {
+    if (size_ == 0) throw std::out_of_range("the vector is empty");
     return *begin();
   }
 
-  constexpr reference back() {
-    if (size_ == 0)
-      throw std::out_of_range(
-          "s21::vector::back Using methods on a zero "
-          "sized container results "
-          "in the UB");
-    return *std::prev(end());
+  reference back() {
+    if (size_ == 0) throw std::out_of_range("the vector is empty");
+    return buffer_[size_ - 1];
   }
 
-  constexpr const_reference back() const {
-    if (size_ == 0)
-      throw std::out_of_range(
-          "s21::vector::back Using methods on a zero "
-          "sized container results "
-          "in the UB");
-    return *std::prev(end());
+  const_reference back() const {
+    if (size_ == 0) throw std::out_of_range("the vector is empty");
+    return buffer_[size_ - 1];
   }
 
-  constexpr iterator data() noexcept { return buffer_; }
+  iterator data() { return buffer_; }
 
-  constexpr const_iterator data() const noexcept { return buffer_; }
+  const_iterator data() const { return buffer_; }
 
-  constexpr iterator begin() noexcept { return buffer_; }
+  // Vector Iterators
+  iterator begin() { return buffer_; }
 
-  constexpr const_iterator begin() const noexcept { return buffer_; }
+  const_iterator begin() const { return buffer_; }
 
-  constexpr iterator end() noexcept { return buffer_ + size_; }
+  iterator end() { return buffer_ + size_; }
 
-  constexpr const_iterator end() const noexcept { return buffer_ + size_; }
+  const_iterator end() const { return buffer_ + size_; }
 
  public:
-  [[nodiscard]] bool empty() const noexcept { return begin() == end(); }
+  bool empty() const { return size_ == 0; }
 
-  [[nodiscard]] constexpr size_type size() const noexcept {
-    return std::distance(begin(), end());
+  size_type size() const { return size_; }
+
+  size_type max_size() const {
+    // Возвращаем максимально возможное количество элементов в векторе
+    return std::numeric_limits<size_type>::max() / sizeof(value_type);
   }
 
-  [[nodiscard]] constexpr size_type max_size() const noexcept {
-    return std::numeric_limits<size_type>::max() / sizeof(value_type) / 2;
+  // выделяет хранилище элементов размера и копирует текущие элементы массива в новый выделенный массив
+  void reserve(size_type size) {
+    if (size > max_size())
+      throw std::length_error("The size of the vector cannot exceed the maximum size");
+    if (size > capacity()) {
+        value_type *new_data = new value_type[size];
+        for (size_type i = 0; i < size_; i++) {
+            new_data[i] = std::move(buffer_[i]);
+        }
+        delete[] buffer_;
+        buffer_ = new_data;
+        capacity_ = size;
+    }
   }
 
-  constexpr void reserve(size_type new_cap) {
-    if (new_cap <= capacity_) return;
+  // возвращает количество элементов, которые могут храниться в выделенной в данный момент памяти
+  size_type capacity() const { return capacity_; }
 
-    if (new_cap > max_size())
-      throw std::length_error(
-          "s21::vector::reserve Reserve capacity can't be larger than "
-          "Vector<T>::max_size()");
-
-    ReallocVector(new_cap);
+  void clear() { 
+    for (size_type i = 0; i < size_; ++i) {
+        buffer_[i].~value_type(); // вызов деструкторов для элементов
+    }
+    size_ = 0; 
   }
 
-  constexpr size_type capacity() const noexcept { return capacity_; }
-
-  constexpr void clear() noexcept { size_ = 0; }
-
-  constexpr iterator insert(const_iterator pos, value_type &&value) {
-    size_type index = pos - begin();
+  // вставляет элемент со значением value перед итератором pos
+  iterator insert(const_iterator pos, value_type &&value) {
+    size_type index = pos - buffer_; // индекс вставляемого элемента
     if (index > size_)
-      throw std::out_of_range(
-          "s21::vector::insert Unable to insert into a position out of "
-          "range of begin() to end()");
-
-    if (size_ == capacity_) ReallocVector(size_ ? size_ * 2 : 1);
-
-    std::copy(begin() + index, end(), begin() + index + 1);
-    *(buffer_ + index) = std::move(value);
-
-    ++size_;
-    return begin() + index;
+      throw std::out_of_range("going beyond the dimensions of the vector");
+    if (size_ == capacity_) { // размер вектора равен ёмкости
+      reserve(2 * capacity_); // выделяется новая память с удвоенной ёмкостью
+      // Удвоение памяти используется для того, чтобы уменьшить количество перераспределений, 
+      // которые могут быть очень дорогостоящими в случае, если размер контейнера увеличивается поштучно
+    }
+    for (size_type i = size_; i > index; --i) {
+      buffer_[i] = std::move(buffer_[i - 1]); 
+      // Сдвиг элементов вектора с индексами от index до size_ (исключая index) на одну позицию вправо.
+    }
+    buffer_[index] = std::move(value); // Присвоение элементу с индексом index значения, передаваемого в функцию
+    ++size_; // Увеличение размера вектора
+    return iterator(buffer_ + index); // Возврат итератора на элемент, который был вставлен
   }
 
-  constexpr iterator insert(const_iterator pos, const_reference value) {
-    size_type index = pos - begin();
-    if (index > size_)
-      throw std::out_of_range(
-          "s21::vector::insert Unable to insert into a position out of "
-          "range of begin() to end()");
-
-    if (size_ == capacity_) ReallocVector(size_ ? size_ * 2 : 1);
-
-    std::copy(begin() + index, end(), begin() + index + 1);
-    *(buffer_ + index) = value;
-
-    ++size_;
-    return begin() + index;
-  }
-
-  constexpr iterator erase(const_iterator pos) {
-    size_type index = pos - begin();
-    if (index >= size_)
-      throw std::out_of_range(
-          "s21::vector::erase Unable to erase a position out of range of "
-          "begin() to end()");
-
-    std::copy(begin(), const_cast<iterator>(pos), buffer_);
-    std::copy(const_cast<iterator>(pos) + 1, end(), buffer_ + index);
-
-    --size_;
-    return begin() + index;
+  // стирает элемент в позиции
+  iterator erase(const_iterator pos) {
+    size_type index = pos - buffer_; // индекс элемента в векторе, который нужно удалить
+    if (index >= size_) // индекс больше или равен размеру вектора
+      throw std::out_of_range("index out of range");
+    for (size_type i = index; i < size_ - 1; ++i) { // перебираем элементы вектора, начиная с удаленного элемента
+      buffer_[i] = std::move(buffer_[i + 1]); // перемещаем их на одну позицию влево
+    }
+    --size_; // уменьшаем размер вектора
+    return iterator(buffer_ + index); // возвращаем итератор на удаленный элемент
   }
 
   constexpr void push_back(const_reference value) {
@@ -252,16 +222,18 @@ class vector {
   }
 
   template <typename... Args>
-  constexpr iterator emplace(const_iterator pos, Args &&... args) {
-    iterator ret = nullptr;
-    auto id = pos - begin();
-    reserve(capacity_ + sizeof...(args));
-
-    for (auto &&item : {std::forward<Args>(args)...})
-      ret = insert(begin() + id, item);
-
-    return ret;
+  iterator emplace(const_iterator pos, Args&&... args) {
+    size_type index = pos - buffer_;
+    if (index > size_ + 1)
+      throw std::out_of_range("going beyond the dimensions of the vector");
+    if (size_ == capacity_) {
+      reserve(2 * capacity_);
+    }
+    iterator it = begin() + index;
+    insert(it, std::forward<Args>(args)...);
+    return it;
   }
+
 
   template <typename... Args>
   constexpr iterator emplace_back(Args &&... args) {
