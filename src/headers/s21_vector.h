@@ -79,6 +79,7 @@ class vector {
   }
 
  public:
+  // Vector Element access
   reference at(size_type pos) {
     if (pos >= size_) throw std::out_of_range("at The index is out of range");
     return buffer_[pos];
@@ -113,6 +114,7 @@ class vector {
     return buffer_[size_ - 1];
   }
 
+  // Vector Iterators
   constexpr iterator data() noexcept { return buffer_; }
 
   constexpr const_iterator data() const noexcept { return buffer_; }
