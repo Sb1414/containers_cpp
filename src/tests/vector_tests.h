@@ -394,13 +394,13 @@ TEST(VectorTest, Swap) {
 
 TEST(VectorTest, Emplace_InsertsElementAtSpecifiedPosition) {
   s21::vector<int> vec{1, 2, 3};
-  auto it = vec.emplace(vec.begin() + 1, 4);
+  auto it = vec.emplace(vec.begin() + vec.size(), 4);
 
   ASSERT_EQ(*it, 4);
   ASSERT_EQ(vec[0], 1);
-  ASSERT_EQ(vec[1], 4);
-  ASSERT_EQ(vec[2], 2);
-  ASSERT_EQ(vec[3], 3);
+  ASSERT_EQ(vec[1], 2);
+  ASSERT_EQ(vec[2], 3);
+  ASSERT_EQ(vec[3], 4);
 }
 
 TEST(VectorTest, Emplace_IncreasesSizeAndCapacity) {
