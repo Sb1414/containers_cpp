@@ -1,11 +1,5 @@
-#ifndef S21_CONTAINERS_S21_CONTAINERS_S21_VECTOR_H_
-#define S21_CONTAINERS_S21_CONTAINERS_S21_VECTOR_H_
-
-#include <algorithm>
-#include <initializer_list>
-#include <limits>
-#include <utility>
-
+#ifndef SRC_S21_VECTOR_H_
+#define SRC_S21_VECTOR_H_
 namespace s21 {
 
 template <typename T>
@@ -256,4 +250,4 @@ class vector {
 
 }  // namespace s21
 
-#endif  // S21_CONTAINERS_S21_CONTAINERS_S21_VECTOR_H_
+#endif  // SRC_S21_VECTOR_H_
