@@ -211,12 +211,16 @@ class list {
   }
 
   iterator insert(iterator pos, const_reference value) {
-    node_type *new_node = new node_type(value);
-    new_node->next_ = pos.node_;
-    new_node->prev_ = pos.node_->prev_;
-    pos.node_->prev_->next_ = new_node;
-    pos.node_->prev_ = new_node;
+    node_pointer new_node = new ListNode(value);
+    node_pointer next_node = pos.node_;
+    node_pointer prev_node = next_node->prev_;
+
+    prev_node->next_ = new_node;
+    new_node->prev_ = prev_node;
+    new_node->next_ = next_node;
+    next_node->prev_ = new_node;
     ++size_;
+
     return iterator(new_node);
   }
 
