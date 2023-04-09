@@ -204,23 +204,56 @@ TEST(VectorTest, Empty_ConstNonEmptyVector) {
   ASSERT_TRUE(vec2.empty());
 }
 
-TEST(VectorTest, Empty_ComparisonWithStdVector) {
-  s21::vector<int> vec;
-  std::vector<int> stdVec;
-  ASSERT_EQ(vec.empty(), stdVec.empty());
+TEST(VectorTest, PushBack_InsertsElementAtEnd) {
+  s21::vector<int> vec{1, 2, 3};
+  vec.push_back(4);
 
-  vec.push_back(1);
-  stdVec.push_back(1);
-  ASSERT_EQ(vec.empty(), stdVec.empty());
-
-  vec.push_back(2);
-  stdVec.push_back(2);
-  ASSERT_EQ(vec.empty(), stdVec.empty());
-
-  vec.pop_back();
-  stdVec.pop_back();
-  ASSERT_EQ(vec.empty(), stdVec.empty());
+  ASSERT_EQ(vec[0], 1);
+  ASSERT_EQ(vec[1], 2);
+  ASSERT_EQ(vec[2], 3);
+  ASSERT_EQ(vec[3], 4);
 }
+
+TEST(VectorTest, PushBack_StdInsertsElementAtEnd) {
+  s21::vector<int> vec1{1, 2, 3};
+  std::vector<int> vec2{1, 2, 3};
+  vec1.push_back(4);
+  vec2.push_back(4);
+
+  ASSERT_EQ(vec1[0], vec2[0]);
+  ASSERT_EQ(vec1[1], vec2[1]);
+  ASSERT_EQ(vec1[2], vec2[2]);
+  ASSERT_EQ(vec1[3], vec2[3]);
+}
+
+TEST(VectorTest, PushBack_ReservesMemoryWhenCapacityIsReached) {
+  s21::vector<int> vec;
+  vec.reserve(3);
+  vec.push_back(1);
+  vec.push_back(2);
+  vec.push_back(3);
+
+  ASSERT_EQ(vec.capacity(), 3);
+
+  vec.push_back(4);
+
+  ASSERT_EQ(vec.capacity(), 6);
+  ASSERT_EQ(vec[0], 1);
+  ASSERT_EQ(vec[1], 2);
+  ASSERT_EQ(vec[2], 3);
+  ASSERT_EQ(vec[3], 4);
+}
+
+TEST(VectorTest, PushBack_IncreasesSizeByOne) {
+  s21::vector<int> vec;
+  vec.reserve(3);
+  ASSERT_EQ(vec.size(), 0);
+  vec.push_back(1);
+  ASSERT_EQ(vec.size(), 1);
+  vec.push_back(2);
+  ASSERT_EQ(vec.size(), 2);
+}
+
 
 TEST(VectorTest, Clear) {
   std::vector<int> a;

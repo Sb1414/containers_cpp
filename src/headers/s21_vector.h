@@ -195,13 +195,6 @@ class vector {
     buffer_[size_++] = value;
   }
 
-  void push_back(value_type &&value) {
-    if (size_ == capacity_) reserve(size_ ? size_ * 2 : 1);
-
-    buffer_[size_] = std::move(value);
-    ++size_;
-  }
-
   void pop_back() {
     if (size_ == 0)
       throw std::length_error(
