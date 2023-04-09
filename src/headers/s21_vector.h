@@ -188,21 +188,21 @@ class vector {
     return iterator(buffer_ + index);
   }
 
-  constexpr void push_back(const_reference value) {
-    if (size_ == capacity_) reserve(size_ ? size_ * 2 : 1);
-
-    buffer_[size_] = value;
-    ++size_;
+  void push_back(const_reference value) {
+    if (size_ == capacity_) {
+      reserve(2 * capacity_);
+    }
+    buffer_[size_++] = value;
   }
 
-  constexpr void push_back(value_type &&value) {
+  void push_back(value_type &&value) {
     if (size_ == capacity_) reserve(size_ ? size_ * 2 : 1);
 
     buffer_[size_] = std::move(value);
     ++size_;
   }
 
-  constexpr void pop_back() {
+  void pop_back() {
     if (size_ == 0)
       throw std::length_error(
           "s21::vector::pop_back Calling pop_back on an empty container "
