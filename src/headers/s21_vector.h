@@ -155,6 +155,19 @@ class vector {
   // возвращает количество элементов, которые могут храниться в выделенной в данный момент памяти
   size_type capacity() const { return capacity_; }
 
+  void shrink_to_fit() {
+    if (size_ == capacity_) {
+      return;
+    }
+    value_type* new_buffer = new value_type[size_];
+    for (size_type i = 0; i < size_; ++i) {
+      new (new_buffer + i) value_type(std::move(buffer_[i]));
+    }
+    std::swap(buffer_, new_buffer);
+    capacity_ = size_;
+    delete[] new_buffer;
+  }
+
   void clear() { 
     for (size_type i = 0; i < size_; ++i) {
         buffer_[i].~value_type(); // вызов деструкторов для элементов
