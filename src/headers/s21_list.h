@@ -1,9 +1,5 @@
-#ifndef CONTAINERS_S21_LIST_H
-#define CONTAINERS_S21_LIST_H
-
-#include <initializer_list>
-#include <iterator>
-#include <limits>
+#ifndef SRC_S21_LIST_H
+#define SRC_S21_LIST_H
 
 namespace s21 {
 template <typename Type>
@@ -432,4 +428,4 @@ class list {
 
 }  // namespace s21
 
-#endif  // CONTAINERS_S21_LIST_H
+#endif  // SRC_S21_LIST_H
