@@ -167,28 +167,25 @@ class vector {
     if (index > size_)
       throw std::out_of_range("going beyond the dimensions of the vector");
     if (size_ == capacity_) {
-        reserve(2 * capacity_);
+      reserve(2 * capacity_);
     }
     for (size_type i = size_; i > index; --i) {
-        buffer_[i] = std::move(buffer_[i - 1]);
+      buffer_[i] = std::move(buffer_[i - 1]);
     }
     buffer_[index] = std::move(value);
     ++size_;
     return iterator(buffer_ + index);
   }
 
-  constexpr iterator erase(const_iterator pos) {
-    size_type index = pos - begin();
+  iterator erase(const_iterator pos) {
+    size_type index = pos - buffer_;
     if (index >= size_)
-      throw std::out_of_range(
-          "s21::vector::erase Unable to erase a position out of range of "
-          "begin() to end()");
-
-    std::copy(begin(), const_cast<iterator>(pos), buffer_);
-    std::copy(const_cast<iterator>(pos) + 1, end(), buffer_ + index);
-
+        throw std::out_of_range("index out of range");
+    for (size_type i = index; i < size_ - 1; ++i) {
+        buffer_[i] = std::move(buffer_[i + 1]);
+    }
     --size_;
-    return begin() + index;
+    return iterator(buffer_ + index);
   }
 
   constexpr void push_back(const_reference value) {
