@@ -210,14 +210,21 @@ class list {
            1;
   }
 
+  // принимает два аргумента: итератор pos на позицию в списке, перед которой нужно вставить 
+  // новый элемент, и константную ссылку на значение value, которое нужно вставить
   iterator insert(iterator pos, const_reference value) {
-    node_type *new_node = new node_type(value);
-    new_node->next_ = pos.node_;
-    new_node->prev_ = pos.node_->prev_;
-    pos.node_->prev_->next_ = new_node;
-    pos.node_->prev_ = new_node;
-    ++size_;
-    return iterator(new_node);
+    node_pointer new_node = new ListNode(value); // создаем новый узел new_node с переданным значением value
+    // выделение памяти под новый узел с помощью оператора new
+    node_pointer next_node = pos.node_; // получение указателя на узел, следующий за позицией pos, чтобы затем связать новый узел с ним
+    node_pointer prev_node = next_node->prev_; // получение указателя на узел, предшествующий позиции pos, чтобы затем связать новый узел с ним.
+
+    prev_node->next_ = new_node; // установка указателя next_ для узла, предшествующего pos, чтобы он указывал на новый узел new_node
+    new_node->prev_ = prev_node; // установка указателя prev_ для нового узла new_node, чтобы он указывал на узел, предшествующий pos.
+    new_node->next_ = next_node; // установка указателя next_ для нового узла new_node, чтобы он указывал на узел, следующий за pos.
+    next_node->prev_ = new_node; // установка указателя prev_ для узла, следующего за pos, чтобы он указывал на новый узел new_node
+    ++size_; // увеличение размера списка
+
+    return iterator(new_node); // возвращение итератора на вставленный узел. Создание нового объекта итератора с указателем на вставленный узел new_node
   }
 
   void erase(iterator pos) noexcept {
