@@ -260,6 +260,13 @@ class list {
     return const_cast<list *>(this)->insert(pos, value);
   }
 
+  template <typename InputIterator>
+  void insert(const_iterator pos, InputIterator first, InputIterator last) {
+    for (auto it = first; it != last; ++it) {
+      insert(pos, *it);
+    }
+  }
+
   void erase(iterator pos) noexcept {
     if (pos != end()) {
       pos.node_->prev_->next_ = pos.node_->next_;
@@ -322,18 +329,25 @@ class list {
   }
 
   void splice(const_iterator pos, list &other) {
-    if (!other.empty()) {
-      iterator it = other.begin();
-      const_iterator other_end = other.end();
-      while (it != other_end) {
-        const_iterator const_pos = pos;
-        insert(const_pos, *it);
-        ++it;
-      }
-      other.head_->next_ = other.tail_;
-      other.tail_->prev_ = other.head_;
-      other.size_ = 0;
+    node_pointer pos_node = const_cast<node_pointer>(pos.node_);
+    node_pointer other_first = other.head_->next_;
+    node_pointer other_last = other.tail_;
+    size_type other_size = other.size_;
+
+    if (other_first == other_last) {
+      return;
     }
+
+    other_first->prev_ = other_last->prev_;
+    other_last->prev_->next_ = other_first;
+
+    pos_node->prev_->next_ = other_first;
+    other_first->prev_ = pos_node->prev_;
+    pos_node->prev_ = other_last->prev_;
+    other_last->prev_->next_ = pos_node;
+
+    size_ += other_size;
+    other.size_ = 0;
   }
 
   void merge(list &other) {
@@ -382,7 +396,38 @@ class list {
     }
   }
 
-  void sort() { QuickSort(begin(), --end(), size_); }
+  void sort() {
+    // Если список пуст или содержит только один элемент, он уже отсортирован
+    if (size() < 2) {
+      return;
+    }
+    // Итераторы для обхода списка
+    auto it = begin();
+    auto end_it = end();
+
+    // Обработка каждого элемента списка
+    while (it != end_it) {
+      // Сохраняем текущий элемент и итератор на следующий
+      auto current = *it;
+      auto next_it = std::next(it);
+      // Ищем позицию для вставки текущего элемента
+      auto insert_it = it;
+      while (insert_it != begin() && *std::prev(insert_it) > current) {
+        --insert_it;
+      }
+      // Если текущий элемент уже на своем месте, переходим к следующему
+      if (insert_it == it) {
+        it = next_it;
+        continue;
+      }
+      // Удаляем текущий элемент из списка
+      erase(it);
+      // Вставляем текущий элемент на новое место
+      insert(insert_it, current);
+      // Обновляем итератор для продолжения обхода списка
+      it = next_it;
+    }
+  }
 
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PART 3
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -413,69 +458,6 @@ class list {
   }
 
  private:
-  // удаляет узел из списка, отсоединяя его от соседних элементов (merge)
-  void UnAttachNode(node_type *node) noexcept {
-    node->prev_->next_ = node->next_;
-    node->next_->prev_ = node->prev_;
-    node->next_ = node;
-    node->prev_ = node;
-  }
-
-  // вставляет новый узел перед заданным элементом (merge)
-  void InsertNodeBefore(node_type *pos_node, node_type *new_node) noexcept {
-    new_node->prev_ = pos_node->prev_;
-    new_node->next_ = pos_node;
-    pos_node->prev_->next_ = new_node;
-    pos_node->prev_ = new_node;
-  }
-
-  void QuickSort(iterator left, iterator right, size_type list_size) {
-    if (left != right && list_size > 1) {
-      iterator swap_ = left;
-      iterator pivot_ = left;
-      iterator l_tmp = left;
-      iterator r_tmp = right;
-      --swap_;
-      --pivot_;
-      size_type pos = 0;
-      while (pos < list_size / 2) {
-        ++pivot_;
-        ++pos;
-      }
-      value_type pivot = *pivot_;
-      pos = 0;
-      pivot_.node_->SwapValues(right.node_);
-      while (l_tmp != r_tmp) {
-        if (*l_tmp < pivot) {
-          ++swap_;
-          ++pos;
-          l_tmp.node_->SwapValues(swap_.node_);
-          ++l_tmp;
-        } else if (*l_tmp == pivot) {
-          --r_tmp;
-          l_tmp.node_->SwapValues(r_tmp.node_);
-        } else {
-          ++l_tmp;
-        }
-      }
-      iterator next_step_left = swap_;
-      size_type next_step_left_size = pos;
-      size_type next_step_right_size = list_size - pos - 1;
-      ++swap_;
-      while (r_tmp != right) {
-        swap_.node_->SwapValues(r_tmp.node_);
-        ++swap_;
-        ++r_tmp;
-        --next_step_right_size;
-      }
-      swap_.node_->SwapValues(right.node_);
-      ++swap_;
-      iterator next_step_right = swap_;
-      QuickSort(left, next_step_left, next_step_left_size);
-      QuickSort(next_step_right, right, next_step_right_size);
-    }
-  }
-
   node_type *head_;
   node_type *tail_;
   size_type size_;

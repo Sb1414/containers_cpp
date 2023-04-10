@@ -202,7 +202,7 @@ TEST(List, Modifier_Pop) {
   }
 }
 
-TEST(List, Modifier_Swap) {
+TEST(List, ModifierSwap) {
   s21::list<char> s21_l_1 = {'E', 'v', 'e', 't', 't', 'e', 'I',
                              's', 'a', 'd', 'o', 'r', 'a'};
   s21::list<char> s21_l_2 = {'B', 'r', 'y', 'c', 'e', 'A',
@@ -226,6 +226,70 @@ TEST(List, Modifier_Swap) {
   }
   EXPECT_EQ(s21_l_1.size(), s21_l_4.size());
   EXPECT_EQ(s21_l_2.size(), s21_l_3.size());
+}
+
+TEST(List, ModifierSwapEq) {
+  s21::list<char> s21_l_1 = {'E', 'v', 'e', 't', 't', 'e', 'i', 's'};
+  s21::list<char> s21_l_2 = {'E', 'v', 'e', 't', 't', 'e', 'i', 's'};
+  s21::list<char> s21_l_3 = {'E', 'v', 'e', 't', 't', 'e', 'i', 's'};
+  s21::list<char> s21_l_4 = {'E', 'v', 'e', 't', 't', 'e', 'i', 's'};
+  s21_l_1.swap(s21_l_2);
+  auto it1 = s21_l_1.begin();
+  auto it2 = s21_l_2.begin();
+  auto it3 = s21_l_3.begin();
+  auto it4 = s21_l_4.begin();
+  while (it1 != s21_l_1.end()) {
+    EXPECT_EQ(*it1, *it4);
+    ++it1, ++it4;
+  }
+  while (it2 != s21_l_2.end()) {
+    EXPECT_EQ(*it2, *it3);
+    ++it2, ++it3;
+  }
+}
+
+TEST(SwapTest, ModifierSwapReturn) {
+  s21::list<int> lst;
+  lst.push_back(1);
+  lst.push_back(2);
+  lst.swap(lst);
+
+  EXPECT_EQ(2, lst.size());
+  EXPECT_EQ(1, lst.front());
+  EXPECT_EQ(2, lst.back());
+}
+
+TEST(ListTest, SpliceAtBeginning) {
+  s21::list<int> list1 = {1, 2, 3};
+  s21::list<int> list2 = {4, 5, 6};
+  auto it = list1.begin();
+  list1.splice(it, list2);
+  ASSERT_EQ(6, list1.size());
+  ASSERT_EQ(0, list2.size());
+  ASSERT_EQ(4, list1.front());
+  ASSERT_EQ(3, list1.back());
+}
+
+TEST(ListTest, SpliceInMiddle) {
+  s21::list<int> list1 = {1, 2, 5, 6};
+  s21::list<int> list2 = {3, 4};
+  auto it = std::next(list1.begin(), 2);
+  list1.splice(it, list2);
+  ASSERT_EQ(6, list1.size());
+  ASSERT_EQ(0, list2.size());
+  ASSERT_EQ(5, *std::next(list1.begin(), 2));
+  ASSERT_EQ(3, *std::next(list1.begin(), 3));
+}
+
+TEST(ListTest, SpliceAtEnd) {
+  s21::list<int> list1 = {1, 2, 3};
+  s21::list<int> list2 = {4, 5, 6};
+  auto it = list1.end();
+  list1.splice(it, list2);
+  ASSERT_EQ(6, list1.size());
+  ASSERT_EQ(0, list2.size());
+  ASSERT_EQ(4, list1.back());
+  ASSERT_EQ(3, list1.front());
 }
 
 TEST(List, Modifier_Merge) {
@@ -291,7 +355,7 @@ TEST(List, Modifier_Unique) {
   EXPECT_EQ(s21_l.size(), std_l.size());
 }
 
-TEST(List, Modifier_Sort) {
+TEST(List, ModifierSort) {
   s21::list<int> s21_l{1, -1, -14, 4};
   std::list<int> std_l{1, -1, -14, 4};
   s21_l.sort();
@@ -304,9 +368,30 @@ TEST(List, Modifier_Sort) {
   }
 }
 
-TEST(List, Modifier_Sort2) {
+TEST(ListTest, SortTest) {
+  s21::list<int> lst = {5, 2, 8, 1, 9, 3, 6, 7, 4};
+  lst.sort();
+  std::vector<int> expected = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+  EXPECT_THAT(std::vector<int>(lst.begin(), lst.end()),
+              ::testing::ContainerEq(expected));
+}
+
+TEST(List, ModifierSort2) {
   s21::list<int> s21_list{1, -1, -14, 8, 1, 6, 8, -1, -1};
   std::list<int> std_list{1, -1, -14, 8, 1, 6, 8, -1, -1};
+  s21_list.sort();
+  std_list.sort();
+  auto it1 = s21_list.begin();
+  auto it2 = std_list.begin();
+  while (it1 != s21_list.end()) {
+    EXPECT_EQ(*it1, *it2);
+    ++it1, ++it2;
+  }
+}
+
+TEST(List, ModifierSortOneEl) {
+  s21::list<int> s21_list{1};
+  std::list<int> std_list{1};
   s21_list.sort();
   std_list.sort();
   auto it1 = s21_list.begin();
