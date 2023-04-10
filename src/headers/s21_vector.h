@@ -1,11 +1,5 @@
-#ifndef S21_CONTAINERS_S21_CONTAINERS_S21_VECTOR_H_
-#define S21_CONTAINERS_S21_CONTAINERS_S21_VECTOR_H_
-
-#include <algorithm>
-#include <initializer_list>
-#include <limits>
-#include <utility>
-
+#ifndef SRC_S21_VECTOR_H_
+#define SRC_S21_VECTOR_H_
 namespace s21 {
 
 template <typename T>
@@ -137,29 +131,32 @@ class vector {
     return std::numeric_limits<size_type>::max() / sizeof(value_type);
   }
 
-  // выделяет хранилище элементов размера и копирует текущие элементы массива в новый выделенный массив
+  // выделяет хранилище элементов размера и копирует текущие элементы массива в
+  // новый выделенный массив
   void reserve(size_type size) {
     if (size > max_size())
-      throw std::length_error("The size of the vector cannot exceed the maximum size");
+      throw std::length_error(
+          "The size of the vector cannot exceed the maximum size");
     if (size > capacity()) {
-        value_type *new_data = new value_type[size];
-        for (size_type i = 0; i < size_; i++) {
-            new_data[i] = std::move(buffer_[i]);
-        }
-        delete[] buffer_;
-        buffer_ = new_data;
-        capacity_ = size;
+      value_type *new_data = new value_type[size];
+      for (size_type i = 0; i < size_; i++) {
+        new_data[i] = std::move(buffer_[i]);
+      }
+      delete[] buffer_;
+      buffer_ = new_data;
+      capacity_ = size;
     }
   }
 
-  // возвращает количество элементов, которые могут храниться в выделенной в данный момент памяти
+  // возвращает количество элементов, которые могут храниться в выделенной в
+  // данный момент памяти
   size_type capacity() const { return capacity_; }
 
   void shrink_to_fit() {
     if (size_ == capacity_) {
       return;
     }
-    value_type* new_buffer = new value_type[size_];
+    value_type *new_buffer = new value_type[size_];
     for (size_type i = 0; i < size_; ++i) {
       new (new_buffer + i) value_type(std::move(buffer_[i]));
     }
@@ -168,11 +165,11 @@ class vector {
     delete[] new_buffer;
   }
 
-  void clear() { 
+  void clear() {
     for (size_type i = 0; i < size_; ++i) {
-        buffer_[i].~value_type(); // вызов деструкторов для элементов
+      buffer_[i].~value_type();  // вызов деструкторов для элементов
     }
-    size_ = 0; 
+    size_ = 0;
   }
 
   iterator insert(const_iterator pos, value_type &&value) {
@@ -192,10 +189,9 @@ class vector {
 
   iterator erase(const_iterator pos) {
     size_type index = pos - buffer_;
-    if (index >= size_)
-        throw std::out_of_range("index out of range");
+    if (index >= size_) throw std::out_of_range("index out of range");
     for (size_type i = index; i < size_ - 1; ++i) {
-        buffer_[i] = std::move(buffer_[i + 1]);
+      buffer_[i] = std::move(buffer_[i + 1]);
     }
     --size_;
     return iterator(buffer_ + index);
@@ -210,30 +206,27 @@ class vector {
 
   void pop_back() {
     if (size_ == 0) {
-        throw std::out_of_range("vector is empty");
+      throw std::out_of_range("vector is empty");
     }
     --size_;
   }
 
-  void swap(vector& other) {
-    // Swap capacity
+  void swap(vector &other) {
     size_type tmp_cap = capacity_;
     capacity_ = other.capacity_;
     other.capacity_ = tmp_cap;
 
-    // Swap size
     size_type tmp_size = size_;
     size_ = other.size_;
     other.size_ = tmp_size;
 
-    // Swap buffer
     iterator tmp_buf = buffer_;
     buffer_ = other.buffer_;
     other.buffer_ = tmp_buf;
   }
 
   template <typename... Args>
-  iterator emplace(const_iterator pos, Args&&... args) {
+  iterator emplace(const_iterator pos, Args &&... args) {
     size_type index = pos - buffer_;
     if (index > size_ + 1)
       throw std::out_of_range("going beyond the dimensions of the vector");
@@ -256,4 +249,4 @@ class vector {
 
 }  // namespace s21
 
-#endif  // S21_CONTAINERS_S21_CONTAINERS_S21_VECTOR_H_
+#endif  // SRC_S21_VECTOR_H_

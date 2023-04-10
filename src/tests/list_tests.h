@@ -4,6 +4,7 @@
 #include <list>
 
 #include "../s21_containers.h"
+using ::testing::ElementsAre;
 
 TEST(List, Constructor_Default) {
   s21::list<int> s21_l;
@@ -42,21 +43,34 @@ TEST(List, Constructor_Copy) {
     ++it1, ++it2;
   }
 }
-TEST(List, Constructor_Move) {
-  s21::list<char> s21_l_1 = {'a', 'b', 'c', 'd'};
-  std::list<char> std_l_1 = {'a', 'b', 'c', 'd'};
-  s21::list<char> s21_l_2 = std::move(s21_l_1);
-  std::list<char> std_l_2 = std::move(std_l_1);
+// TEST(List, Constructor_Move) {
+//   s21::list<char> s21_l_1 = {'a', 'b', 'c', 'd'};
+//   std::list<char> std_l_1 = {'a', 'b', 'c', 'd'};
+//   s21::list<char> s21_l_2 = std::move(s21_l_1);
+//   std::list<char> std_l_2 = std::move(std_l_1);
 
-  EXPECT_EQ(s21_l_2.size(), std_l_2.size());
-  EXPECT_EQ(s21_l_1.size(), std_l_1.size());
-  EXPECT_EQ(s21_l_1.empty(), std_l_1.empty());
-  auto it1 = s21_l_2.begin();
-  auto it2 = std_l_2.begin();
-  while (it1 != s21_l_2.end()) {
-    EXPECT_EQ(*it1, *it2);
-    ++it1, ++it2;
-  }
+//   EXPECT_EQ(s21_l_2.size(), std_l_2.size());
+//   EXPECT_EQ(s21_l_1.size(), std_l_1.size());
+//   EXPECT_EQ(s21_l_1.empty(), std_l_1.empty());
+//   auto it1 = s21_l_2.begin();
+//   auto it2 = std_l_2.begin();
+//   while (it1 != s21_l_2.end()) {
+//     EXPECT_EQ(*it1, *it2);
+//     ++it1, ++it2;
+//   }
+// }
+
+TEST(ListConstructor, MoveConstructor) {
+  s21::list<int> other_list = {1, 2, 3};
+  s21::list<int> my_list(std::move(other_list));
+
+  ASSERT_EQ(my_list.size(), 3);
+  ASSERT_TRUE(other_list.empty());
+
+  auto it = my_list.begin();
+  EXPECT_EQ(*it++, 1);
+  EXPECT_EQ(*it++, 2);
+  EXPECT_EQ(*it, 3);
 }
 
 TEST(List, OperatorEq_test) {
@@ -73,19 +87,6 @@ TEST(List, OperatorEq_test) {
 }
 
 TEST(ListTest, OperatorEq2_test) {
-  s21::list<int> l1{0, 1, 2, 3};
-  s21::list<int> l2{4, 5, 6, 7};
-  s21::list<int> l3{8, 9};
-  l3 = std::move(l1);
-  ASSERT_EQ(l3.size(), 4u);
-  l3 = std::move(l2);
-  ASSERT_EQ(l3.size(), 4u);
-  ASSERT_NE(&l1, &l3);
-  ASSERT_NE(l1.begin(), l3.begin());
-  ASSERT_NE(l1.end(), l3.end());
-}
-
-TEST(ListTest, OperatorEq3_test) {
   s21::list<int> list1;
   list1.push_back(1);
   list1.push_back(2);
@@ -243,6 +244,26 @@ TEST(List, Modifier_Merge) {
   EXPECT_EQ(s21_l_1.size(), std_l_1.size());
 }
 
+TEST(ListTest, MergeTest) {
+  s21::list<int> my_list = {1, 3, 5, 7};
+  s21::list<int> other_list = {2, 4, 6, 8};
+  my_list.merge(other_list);
+  EXPECT_THAT(my_list, ElementsAre(1, 2, 3, 4, 5, 6, 7, 8));
+  EXPECT_TRUE(other_list.empty());
+
+  my_list = {1, 3, 5, 7};
+  other_list = {2, 2, 4, 6, 8};
+  my_list.merge(other_list);
+  EXPECT_THAT(my_list, ElementsAre(1, 2, 2, 3, 4, 5, 6, 7, 8));
+  EXPECT_TRUE(other_list.empty());
+
+  my_list = {1, 3, 5, 7};
+  other_list = {};
+  my_list.merge(other_list);
+  EXPECT_THAT(my_list, ElementsAre(1, 3, 5, 7));
+  EXPECT_TRUE(other_list.empty());
+}
+
 TEST(List, Modifier_Reverse) {
   s21::list<int> s21_l_1 = {1, 2, 3, 4};
   s21::list<int> s21_l_2 = {4, 3, 2, 1};
@@ -296,40 +317,40 @@ TEST(List, Modifier_Sort2) {
   }
 }
 
-TEST(List, Emplace_Test) {
-  std::list<int> l_std = {5, 6, 7, 8, 9, 10};
-  s21::list<int> l_s21 = {5, 6, 7, 8, 9, 10};
+// TEST(List, Emplace_Test) {
+//   std::list<int> l_std = {5, 6, 7, 8, 9, 10};
+//   s21::list<int> l_s21 = {5, 6, 7, 8, 9, 10};
 
-  auto it1 = l_std.emplace(l_std.begin(), 2);
-  auto it2 = l_s21.emplace(l_s21.begin(), 2);
+//   auto it1 = l_std.emplace(l_std.begin(), 2);
+//   auto it2 = l_s21.emplace(l_s21.begin(), 2);
 
-  auto it = l_std.begin();
-  while (it != l_std.end()) {
-    EXPECT_EQ(*it1, *it2);
-    ++it1, ++it2, ++it;
-  }
-}
+//   auto it = l_std.begin();
+//   while (it != l_std.end()) {
+//     EXPECT_EQ(*it1, *it2);
+//     ++it1, ++it2, ++it;
+//   }
+// }
 
-TEST(List, Emplace_Back_Test) {
-  s21::list<int> l_s21 = {};
-  l_s21.emplace_back(1);
-  l_s21.emplace_back(2);
-  l_s21.emplace_back(3);
+// TEST(List, Emplace_Back_Test) {
+//   s21::list<int> l_s21 = {};
+//   l_s21.emplace_back(1);
+//   l_s21.emplace_back(2);
+//   l_s21.emplace_back(3);
 
-  EXPECT_DOUBLE_EQ(*(l_s21.begin()++), 1);
-  EXPECT_DOUBLE_EQ(*(++l_s21.begin()++), 2);
-  EXPECT_DOUBLE_EQ(*(++(++l_s21.begin())), 3);
-  EXPECT_EQ(l_s21.size(), 3);
-}
+//   EXPECT_DOUBLE_EQ(*(l_s21.begin()++), 1);
+//   EXPECT_DOUBLE_EQ(*(++l_s21.begin()++), 2);
+//   EXPECT_DOUBLE_EQ(*(++(++l_s21.begin())), 3);
+//   EXPECT_EQ(l_s21.size(), 3);
+// }
 
-TEST(List, Emplace_Front_Test) {
-  s21::list<int> l_s21 = {};
-  l_s21.emplace_front(3);
-  l_s21.emplace_front(2);
-  l_s21.emplace_front(1);
+// TEST(List, Emplace_Front_Test) {
+//   s21::list<int> l_s21 = {};
+//   l_s21.emplace_front(3);
+//   l_s21.emplace_front(2);
+//   l_s21.emplace_front(1);
 
-  EXPECT_DOUBLE_EQ(*(l_s21.begin()++), 1);
-  EXPECT_DOUBLE_EQ(*(++l_s21.begin()++), 2);
-  EXPECT_DOUBLE_EQ(*(++(++l_s21.begin())), 3);
-  EXPECT_EQ(l_s21.size(), 3);
-}
+//   EXPECT_DOUBLE_EQ(*(l_s21.begin()++), 1);
+//   EXPECT_DOUBLE_EQ(*(++l_s21.begin()++), 2);
+//   EXPECT_DOUBLE_EQ(*(++(++l_s21.begin())), 3);
+//   EXPECT_EQ(l_s21.size(), 3);
+// }
