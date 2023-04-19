@@ -8,6 +8,8 @@
 namespace s21 {
 enum color { black, red };
 
+// Параметр Key указывает тип данных, которые будут храниться в дереве
+// Параметр Comparison опциональный и в качестве параметра шаблона можно передать компаратор с типом, который должен быть сравнимым с типом Key
 template <typename Key, typename Comparison = std::less<Key>>
 class tree {
  private:
