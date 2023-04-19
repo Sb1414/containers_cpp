@@ -50,7 +50,7 @@ class stack {
   void swap(stack &other) { data_.swap(other.data_); }
 
   template <typename... Args>
-  void emplace_front(Args &&... args) {
+  void emplace_front(Args &&...args) {
     return data_.emplace_back(std::forward<Args>(args)...);
   }
 

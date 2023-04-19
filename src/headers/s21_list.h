@@ -1,5 +1,5 @@
-#ifndef SRC_S21_LIST_H
-#define SRC_S21_LIST_H
+#ifndef CONTAINERS_S21_LIST_H
+#define CONTAINERS_S21_LIST_H
 
 namespace s21 {
 template <typename Type>
@@ -23,22 +23,18 @@ class list {
   // узел двусвязного списка
   class ListNode {
    public:
-    // конструктор по умолчанию
     ListNode() noexcept : next_(this), prev_(this), value_(value_type{}) {}
 
-    // конструкторы с параметрами для создания узлов с заданным значением
     explicit ListNode(const_reference value) noexcept
         : next_(nullptr), prev_(nullptr), value_(value) {}
 
     explicit ListNode(value_type &&value) noexcept
         : next_(nullptr), prev_(nullptr), value_(std::move(value)) {}
 
-    // метод для обмена значениями между узлами
     void SwapValues(node_type *other_node) noexcept {
       std::swap(value_, other_node->value_);
     }
 
-    // метод для обмена указателями на следующий и предыдущий узлы
     void SwapNextPrev() noexcept { std::swap(next_, prev_); }
 
     node_type *next_;   // указатель на следующий узел
@@ -47,7 +43,6 @@ class list {
   };
 
  public:
-  // вложенный класс ListIterator
   class ListIterator {
    public:
     using iterator_category = std::bidirectional_iterator_tag;
@@ -67,38 +62,32 @@ class list {
       return *this;
     }
 
-    // Переход к следующему узлу списка (постфиксный инкремент)
     iterator operator++(int) {
       iterator it = *this;
       ++(*this);
       return it;
     }
 
-    // Переход к предыдущему узлу списка (префиксный декремент)
     iterator &operator--() {
       node_ = node_->prev_;
       return *this;
     }
 
-    // Переход к предыдущему узлу списка (постфиксный декремент)
     iterator operator--(int) {
       iterator it = *this;
       --(*this);
       return it;
     }
 
-    // Оператор равенства для проверки равенства двух итераторов
     bool operator==(const iterator &other) const {
       return node_ == other.node_;
     }
 
-    // Оператор неравенства для проверки неравенства двух итераторов
     bool operator!=(const iterator &other) const { return !(*this == other); }
 
     node_type *node_;
   };
 
-  // вложенный класс ListIteratorConst
   class ListIteratorConst {
    public:
     using iterator_category = std::bidirectional_iterator_tag;
@@ -223,37 +212,18 @@ class list {
            1;
   }
 
-  // принимает два аргумента: итератор pos на позицию в списке, перед которой
-  // нужно вставить новый элемент, и константную ссылку на значение value,
-  // которое нужно вставить
   iterator insert(iterator pos, const_reference value) {
-    node_pointer new_node = new ListNode(
-        value);  // создаем новый узел new_node с переданным значением value
-    // выделение памяти под новый узел с помощью оператора new
-    node_pointer next_node =
-        pos.node_;  // получение указателя на узел, следующий за позицией pos,
-                    // чтобы затем связать новый узел с ним
-    node_pointer prev_node =
-        next_node->prev_;  // получение указателя на узел, предшествующий
-                           // позиции pos, чтобы затем связать новый узел с ним.
+    node_pointer new_node = new ListNode(value);
+    node_pointer next_node = pos.node_;
+    node_pointer prev_node = next_node->prev_;
 
-    prev_node->next_ =
-        new_node;  // установка указателя next_ для узла, предшествующего pos,
-                   // чтобы он указывал на новый узел new_node
-    new_node->prev_ =
-        prev_node;  // установка указателя prev_ для нового узла new_node, чтобы
-                    // он указывал на узел, предшествующий pos.
-    new_node->next_ =
-        next_node;  // установка указателя next_ для нового узла new_node, чтобы
-                    // он указывал на узел, следующий за pos.
-    next_node->prev_ =
-        new_node;  // установка указателя prev_ для узла, следующего за pos,
-                   // чтобы он указывал на новый узел new_node
-    ++size_;  // увеличение размера списка
+    prev_node->next_ = new_node;
+    new_node->prev_ = prev_node;
+    new_node->next_ = next_node;
+    next_node->prev_ = new_node;
+    ++size_;
 
-    return iterator(new_node);  // возвращение итератора на вставленный узел.
-                                // Создание нового объекта итератора с
-                                // указателем на вставленный узел new_node
+    return iterator(new_node);
   }
 
   const_iterator insert(const_iterator pos, const_reference value) const {
@@ -287,37 +257,23 @@ class list {
   void pop_back() noexcept { erase(--end()); }
 
   void push_front(const_reference value) {
-    node_pointer new_node = new ListNode(
-        value);  // создаем новый узел, который будет добавлен в начало списка
-    new_node->next_ = head_->next_;  // обновление указателей нового узла
-    new_node->prev_ = head_;  // указатели нового узла устанавливаются таким
-                              // образом, что он будет
-    // следовать за головным узлом и будет указывать на первый элемент списка
-    head_->next_->prev_ = new_node;  // обновление указателей старых узлов
-    head_->next_ =
-        new_node;  // указатели старых узлов обновляются таким образом,
-    // что они будут указывать на новый узел и на следующий после него узел
-    ++size_;  // увеличение размера списка
+    node_pointer new_node = new ListNode(value);
+    new_node->next_ = head_->next_;
+    new_node->prev_ = head_;
+    head_->next_->prev_ = new_node;
+    head_->next_ = new_node;
+    ++size_;
   }
 
   void pop_front() {
-    if (empty()) {  // если список пуст
-      return;       // ничего не делаем
+    if (empty()) {
+      return;
     }
-    node_pointer node_to_delete =
-        head_->next_;  // сохраняем указатель на первый узел списка для
-                       // последующего освобождения памяти
-    head_->next_ =
-        node_to_delete->next_;  // устанавливаем указатель на следующий узел для
-                                // головного узла, чтобы он указывал на
-                                // следующий после удаленного узла
-    node_to_delete->next_->prev_ =
-        head_;  // устанавливаем указатель на предыдущий узел для следующего
-                // узла после удаляемого узла, чтобы он указывал на головной
-                // узел
-    delete node_to_delete;  // удаляем узел, на который указывал node_to_delete,
-                            // освобождая память
-    --size_;  // уменьшаем размер списка
+    node_pointer node_to_delete = head_->next_;
+    head_->next_ = node_to_delete->next_;
+    node_to_delete->next_->prev_ = head_;
+    delete node_to_delete;
+    --size_;
   }
 
   void swap(list &other) {
@@ -328,26 +284,23 @@ class list {
     std::swap(size_, other.size_);
   }
 
-  void splice(const_iterator pos, list &other) {
-    node_pointer pos_node = const_cast<node_pointer>(pos.node_);
-    node_pointer other_first = other.head_->next_;
-    node_pointer other_last = other.tail_;
-    size_type other_size = other.size_;
+  void splice(const_iterator pos, list &other) noexcept {
+    if (!other.empty()) {
+      iterator it_current{const_cast<node_type *>(pos.node_)};
+      iterator it_other = other.end();
 
-    if (other_first == other_last) {
-      return;
+      it_other.node_->next_->prev_ = it_current.node_->prev_;
+      it_other.node_->prev_->next_ = it_current.node_;
+
+      it_current.node_->prev_->next_ = it_other.node_->next_;
+      it_current.node_->prev_ = it_other.node_->prev_;
+
+      size_ += other.size();
+
+      other.size_ = 0;
+      other.head_->next_ = other.head_;
+      other.head_->prev_ = other.head_;
     }
-
-    other_first->prev_ = other_last->prev_;
-    other_last->prev_->next_ = other_first;
-
-    pos_node->prev_->next_ = other_first;
-    other_first->prev_ = pos_node->prev_;
-    pos_node->prev_ = other_last->prev_;
-    other_last->prev_->next_ = pos_node;
-
-    size_ += other_size;
-    other.size_ = 0;
   }
 
   void merge(list &other) {
@@ -397,43 +350,32 @@ class list {
   }
 
   void sort() {
-    // Если список пуст или содержит только один элемент, он уже отсортирован
     if (size() < 2) {
       return;
     }
-    // Итераторы для обхода списка
     auto it = begin();
     auto end_it = end();
-
-    // Обработка каждого элемента списка
     while (it != end_it) {
-      // Сохраняем текущий элемент и итератор на следующий
       auto current = *it;
       auto next_it = std::next(it);
-      // Ищем позицию для вставки текущего элемента
       auto insert_it = it;
       while (insert_it != begin() && *std::prev(insert_it) > current) {
         --insert_it;
       }
-      // Если текущий элемент уже на своем месте, переходим к следующему
       if (insert_it == it) {
         it = next_it;
         continue;
       }
-      // Удаляем текущий элемент из списка
       erase(it);
-      // Вставляем текущий элемент на новое место
       insert(insert_it, current);
-      // Обновляем итератор для продолжения обхода списка
       it = next_it;
     }
   }
 
-  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PART 3
-  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PART 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   template <typename... Args>
-  iterator emplace(const_iterator pos, Args &&... args) noexcept {
+  iterator emplace(const_iterator pos, Args &&...args) noexcept {
     node_type *new_node;
     iterator it_{const_cast<node_type *>(pos.node_)};
     for (auto item : {std::forward<Args>(args)...}) {
@@ -448,12 +390,12 @@ class list {
   }
 
   template <typename... Args>
-  void emplace_back(Args &&... args) {
+  void emplace_back(Args &&...args) {
     emplace(end(), std::forward<Args>(args)...);
   }
 
   template <typename... Args>
-  void emplace_front(Args &&... args) {
+  void emplace_front(Args &&...args) {
     emplace(begin(), std::forward<Args>(args)...);
   }
 
@@ -465,4 +407,4 @@ class list {
 
 }  // namespace s21
 
-#endif  // SRC_S21_LIST_H
+#endif  // CONTAINERS_S21_LIST_H

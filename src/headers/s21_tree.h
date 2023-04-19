@@ -1,45 +1,39 @@
-#ifndef S21_CONTAINERS_S21_CONTAINERS_S21_TREE_H_
-#define S21_CONTAINERS_S21_CONTAINERS_S21_TREE_H_
+#ifndef CONTAINERS_S21_TREE_H_
+#define CONTAINERS_S21_TREE_H_
 
 #include <functional>
 #include <limits>
 #include <vector>
 
 namespace s21 {
-enum RedBlackTreeColor { kBlack, kRed };
+enum color { black, red };
 
-template <typename Key, typename Comparator = std::less<Key>>
-class RedBlackTree {
+template <typename Key, typename Comparison = std::less<Key>>
+class tree {
  private:
-  struct RedBlackTreeNode;
-  struct RedBlackTreeIterator;
-  struct RedBlackTreeIteratorConst;
-#if defined(S21_CONTAINERS_TREE_TEST_HELPER)
-  template <typename U>
-  friend class RedBlackTreeTestHelper;
-#endif
+  struct Node;
+  struct Iterator;
+  struct IteratorConst;
+
  public:
   using key_type = Key;
   using reference = key_type &;
   using const_reference = const key_type &;
-  using iterator = RedBlackTreeIterator;
-  using const_iterator = RedBlackTreeIteratorConst;
+  using iterator = Iterator;
+  using const_iterator = IteratorConst;
   using size_type = std::size_t;
-  using tree_type = RedBlackTree;
-  using tree_node = RedBlackTreeNode;
-  using tree_color = RedBlackTreeColor;
 
-  RedBlackTree() : head_(new tree_node), size_(0U) {}
+  tree() : head_(new Node), size_(0U) {}
 
-  RedBlackTree(const tree_type &other) : RedBlackTree() {
+  tree(const tree &other) : tree() {
     if (other.Size() > 0) {
       CopyTreeFromOther(other);
     }
   }
 
-  RedBlackTree(tree_type &&other) noexcept : RedBlackTree() { Swap(other); }
+  tree(tree &&other) noexcept : tree() { Swap(other); }
 
-  tree_type &operator=(const tree_type &other) {
+  tree &operator=(const tree &other) {
     if (this != &other) {
       if (other.Size() > 0) {
         CopyTreeFromOther(other);
@@ -50,13 +44,13 @@ class RedBlackTree {
     return *this;
   }
 
-  tree_type &operator=(tree_type &&other) noexcept {
+  tree &operator=(tree &&other) noexcept {
     Clear();
     Swap(other);
     return *this;
   }
 
-  ~RedBlackTree() {
+  ~tree() {
     Clear();
     delete head_;
     head_ = nullptr;
@@ -73,24 +67,20 @@ class RedBlackTree {
   bool Empty() const noexcept { return size_ == 0; }
 
   size_type MaxSize() const noexcept {
-    return ((std::numeric_limits<size_type>::max() / 2) - sizeof(tree_type) -
-            sizeof(tree_node)) /
-           sizeof(tree_node);
+    return ((std::numeric_limits<size_type>::max() / 2) - sizeof(tree) -
+            sizeof(Node)) /
+           sizeof(Node);
   }
 
   iterator Begin() noexcept { return iterator(MostLeft()); }
 
-  const_iterator Begin() const noexcept { return const_iterator(MostLeft()); }
-
   iterator End() noexcept { return iterator(head_); }
 
-  const_iterator End() const noexcept { return const_iterator(head_); }
-
-  void Merge(tree_type &other) {
+  void Merge(tree &other) {
     if (this != &other) {
       iterator other_begin = other.Begin();
       while (other.size_ > 0) {
-        tree_node *moving_node = other_begin.node_;
+        Node *moving_node = other_begin.node_;
         ++other_begin;
         if (moving_node->left_ != nullptr) {
           moving_node->left_->parent_ = moving_node->parent_;
@@ -104,7 +94,10 @@ class RedBlackTree {
         if (moving_node->parent_->right_ == moving_node) {
           moving_node->parent_->right_ = nullptr;
         }
-        moving_node->ToDefault();
+        moving_node->left_ = nullptr;
+        moving_node->right_ = nullptr;
+        moving_node->parent_ = nullptr;
+        moving_node->color_ = red;
         --other.size_;
         Insert(Root(), moving_node, false);
       }
@@ -112,7 +105,7 @@ class RedBlackTree {
     }
   }
 
-  void MergeUnique(tree_type &other) {
+  void MergeUnique(tree &other) {
     if (this != &other) {
       iterator other_begin = other.Begin();
       iterator other_end = other.End();
@@ -122,7 +115,7 @@ class RedBlackTree {
         if (result_it == End()) {
           iterator tmp = other_begin;
           ++other_begin;
-          tree_node *moving_node = other.ExtractNode(tmp);
+          Node *moving_node = other.ExtractNode(tmp);
           Insert(Root(), moving_node, false);
         } else {
           ++other_begin;
@@ -132,26 +125,25 @@ class RedBlackTree {
   }
 
   iterator Insert(const key_type &key) {
-    tree_node *new_node = new tree_node{key};
+    Node *new_node = new Node{key};
     return Insert(Root(), new_node, false).first;
   }
 
   std::pair<iterator, bool> InsertUnique(const key_type &key) {
-    tree_node *new_node = new tree_node{key};
+    Node *new_node = new Node{key};
     std::pair<iterator, bool> result = Insert(Root(), new_node, true);
     if (result.second == false) {
       delete new_node;
     }
-
     return result;
   }
 
   template <typename... Args>
-  std::vector<std::pair<iterator, bool>> Emplace(Args &&... args) {
+  std::vector<std::pair<iterator, bool>> Emplace(Args &&...args) {
     std::vector<std::pair<iterator, bool>> result;
     result.reserve(sizeof...(args));
     for (auto item : {std::forward<Args>(args)...}) {
-      tree_node *new_node = new tree_node(std::move(item));
+      Node *new_node = new Node(std::move(item));
       std::pair<iterator, bool> result_insert = Insert(Root(), new_node, false);
       result.push_back(result_insert);
     }
@@ -159,12 +151,12 @@ class RedBlackTree {
   }
 
   template <typename... Args>
-  std::vector<std::pair<iterator, bool>> EmplaceUnique(Args &&... args) {
+  std::vector<std::pair<iterator, bool>> EmplaceUnique(Args &&...args) {
     std::vector<std::pair<iterator, bool>> result;
     result.reserve(sizeof...(args));
 
     for (auto item : {std::forward<Args>(args)...}) {
-      tree_node *new_node = new tree_node(std::move(item));
+      Node *new_node = new Node(std::move(item));
       std::pair<iterator, bool> result_insert = Insert(Root(), new_node, true);
       if (result_insert.second == false) {
         delete new_node;
@@ -183,8 +175,8 @@ class RedBlackTree {
   }
 
   iterator LowerBound(const_reference key) {
-    tree_node *start = Root();
-    tree_node *result = End().node_;
+    Node *start = Root();
+    Node *result = End().node_;
     while (start != nullptr) {
       if (!cmp_(start->key_, key)) {
         result = start;
@@ -197,8 +189,8 @@ class RedBlackTree {
   }
 
   iterator UpperBound(const_reference key) {
-    tree_node *start = Root();
-    tree_node *result = End().node_;
+    Node *start = Root();
+    Node *result = End().node_;
 
     while (start != nullptr) {
       if (cmp_(key, start->key_)) {
@@ -211,43 +203,19 @@ class RedBlackTree {
   }
 
   void Erase(iterator pos) noexcept {
-    tree_node *result = ExtractNode(pos);
+    Node *result = ExtractNode(pos);
     delete result;
   }
 
-  void Swap(tree_type &other) noexcept {
+  void Swap(tree &other) noexcept {
     std::swap(head_, other.head_);
     std::swap(size_, other.size_);
     std::swap(cmp_, other.cmp_);
   }
 
-  bool CheckTree() const noexcept {
-    if (head_->color_ == kBlack) {
-      return false;
-    }
-
-    if (Root() == nullptr) {
-      return true;
-    }
-
-    if (Root()->color_ == kRed) {
-      return false;
-    }
-
-    if (checkRedNodes(Root()) == false) {
-      return false;
-    }
-
-    if (ComputeBlackHeight(Root()) == -1) {
-      return false;
-    }
-
-    return true;
-  }
-
  private:
-  void CopyTreeFromOther(const tree_type &other) {
-    tree_node *other_copy_root = CopyTree(other.Root(), nullptr);
+  void CopyTreeFromOther(const tree &other) {
+    Node *other_copy_root = CopyTree(other.Root(), nullptr);
     Clear();
     Root() = other_copy_root;
     Root()->parent_ = head_;
@@ -257,8 +225,8 @@ class RedBlackTree {
     cmp_ = other.cmp_;
   }
 
-  [[nodiscard]] tree_node *CopyTree(const tree_node *node, tree_node *parent) {
-    tree_node *copy = new tree_node{node->key_, node->color_};
+  Node *CopyTree(const Node *node, Node *parent) {
+    Node *copy = new Node{node->key_, node->color_};
     try {
       if (node->left_) {
         copy->left_ = CopyTree(node->left_, copy);
@@ -276,33 +244,31 @@ class RedBlackTree {
     return copy;
   }
 
-  void Destroy(tree_node *node) noexcept {
+  void Destroy(Node *node) noexcept {
     if (node == nullptr) return;
     Destroy(node->left_);
     Destroy(node->right_);
     delete node;
   }
 
-  void InitializeHead() noexcept {
+  void InitializeHead() {
     Root() = nullptr;
     MostLeft() = head_;
     MostRight() = head_;
   }
 
-  tree_node *&Root() { return head_->parent_; }
+  Node *&Root() { return head_->parent_; }
 
-  const tree_node *Root() const { return head_->parent_; }
+  const Node *Root() const { return head_->parent_; }
 
-  tree_node *&MostLeft() { return head_->left_; }
+  Node *&MostLeft() { return head_->left_; }
 
-  const tree_node *MostLeft() const { return head_->left_; }
+  Node *&MostRight() { return head_->right_; }
 
-  tree_node *&MostRight() { return head_->right_; }
-
-  std::pair<iterator, bool> Insert(tree_node *root, tree_node *new_node,
+  std::pair<iterator, bool> Insert(Node *root, Node *new_node,
                                    bool unique_only) {
-    tree_node *node = root;
-    tree_node *parent = nullptr;
+    Node *node = root;
+    Node *parent = nullptr;
     while (node != nullptr) {
       parent = node;
       if (cmp_(new_node->key_, node->key_)) {
@@ -327,7 +293,7 @@ class RedBlackTree {
         parent->right_ = new_node;
       }
     } else {
-      new_node->color_ = kBlack;
+      new_node->color_ = black;
       new_node->parent_ = head_;
       Root() = new_node;
     }
@@ -342,16 +308,16 @@ class RedBlackTree {
     return {iterator(new_node), true};
   }
 
-  void BalancingInsert(tree_node *node) {
-    tree_node *parent = node->parent_;
-    while (node != Root() && parent->color_ == kRed) {
-      tree_node *gparent = parent->parent_;
+  void BalancingInsert(Node *node) {
+    Node *parent = node->parent_;
+    while (node != Root() && parent->color_ == red) {
+      Node *gparent = parent->parent_;
       if (gparent->left_ == parent) {
-        tree_node *uncle = gparent->right_;
-        if (uncle != nullptr && uncle->color_ == kRed) {
-          parent->color_ = kBlack;
-          uncle->color_ = kBlack;
-          gparent->color_ = kRed;
+        Node *uncle = gparent->right_;
+        if (uncle != nullptr && uncle->color_ == red) {
+          parent->color_ = black;
+          uncle->color_ = black;
+          gparent->color_ = red;
           node = gparent;
           parent = node->parent_;
         } else {
@@ -360,16 +326,16 @@ class RedBlackTree {
             std::swap(parent, node);
           }
           RotateRight(gparent);
-          gparent->color_ = kRed;
-          parent->color_ = kBlack;
+          gparent->color_ = red;
+          parent->color_ = black;
           break;
         }
       } else {
-        tree_node *uncle = gparent->left_;
-        if (uncle != nullptr && uncle->color_ == kRed) {
-          parent->color_ = kBlack;
-          uncle->color_ = kBlack;
-          gparent->color_ = kRed;
+        Node *uncle = gparent->left_;
+        if (uncle != nullptr && uncle->color_ == red) {
+          parent->color_ = black;
+          uncle->color_ = black;
+          gparent->color_ = red;
           node = gparent;
           parent = node->parent_;
         } else {
@@ -378,17 +344,17 @@ class RedBlackTree {
             std::swap(parent, node);
           }
           RotateLeft(gparent);
-          gparent->color_ = kRed;
-          parent->color_ = kBlack;
+          gparent->color_ = red;
+          parent->color_ = black;
           break;
         }
       }
     }
-    Root()->color_ = kBlack;
+    Root()->color_ = black;
   }
 
-  void RotateRight(tree_node *node) noexcept {
-    tree_node *const pivot = node->left_;
+  void RotateRight(Node *node) {
+    Node *const pivot = node->left_;
     pivot->parent_ = node->parent_;
     if (node == Root()) {
       Root() = pivot;
@@ -405,8 +371,8 @@ class RedBlackTree {
     pivot->right_ = node;
   }
 
-  void RotateLeft(tree_node *node) noexcept {
-    tree_node *const pivot = node->right_;
+  void RotateLeft(Node *node) {
+    Node *const pivot = node->right_;
     pivot->parent_ = node->parent_;
     if (node == Root()) {
       Root() = pivot;
@@ -423,20 +389,20 @@ class RedBlackTree {
     pivot->left_ = node;
   }
 
-  tree_node *ExtractNode(iterator pos) noexcept {
+  Node *ExtractNode(iterator pos) {
     if (pos == End()) {
       return nullptr;
     }
 
-    tree_node *deleted_node = pos.node_;
+    Node *deleted_node = pos.node_;
     if (deleted_node->left_ != nullptr && deleted_node->right_ != nullptr) {
-      tree_node *replace = SearchMinimum(deleted_node->right_);
+      Node *replace = SearchMinimum(deleted_node->right_);
       SwapNodesForErase(deleted_node, replace);
     }
-    if (deleted_node->color_ == kBlack &&
+    if (deleted_node->color_ == black &&
         ((deleted_node->left_ == nullptr && deleted_node->right_ != nullptr) ||
          (deleted_node->left_ != nullptr && deleted_node->right_ == nullptr))) {
-      tree_node *replace;
+      Node *replace;
       if (deleted_node->left_ != nullptr) {
         replace = deleted_node->left_;
       } else {
@@ -444,7 +410,7 @@ class RedBlackTree {
       }
       SwapNodesForErase(deleted_node, replace);
     }
-    if (deleted_node->color_ == kBlack && deleted_node->left_ == nullptr &&
+    if (deleted_node->color_ == black && deleted_node->left_ == nullptr &&
         deleted_node->right_ == nullptr) {
       EraseBalancing(deleted_node);
     }
@@ -464,11 +430,14 @@ class RedBlackTree {
       }
     }
     --size_;
-    deleted_node->ToDefault();
+    deleted_node->left_ = nullptr;
+    deleted_node->right_ = nullptr;
+    deleted_node->parent_ = nullptr;
+    deleted_node->color_ = red;
     return deleted_node;
   }
 
-  void SwapNodesForErase(tree_node *node, tree_node *other) noexcept {
+  void SwapNodesForErase(Node *node, Node *other) {
     if (other->parent_->left_ == other) {
       other->parent_->left_ = node;
     } else {
@@ -501,70 +470,70 @@ class RedBlackTree {
     }
   }
 
-  void EraseBalancing(tree_node *deleted_node) noexcept {
-    tree_node *check_node = deleted_node;
-    tree_node *parent = deleted_node->parent_;
-    while (check_node != Root() && check_node->color_ == kBlack) {
+  void EraseBalancing(Node *deleted_node) {
+    Node *check_node = deleted_node;
+    Node *parent = deleted_node->parent_;
+    while (check_node != Root() && check_node->color_ == black) {
       if (check_node == parent->left_) {
-        tree_node *sibling = parent->right_;
-        if (sibling->color_ == kRed) {
+        Node *sibling = parent->right_;
+        if (sibling->color_ == red) {
           std::swap(sibling->color_, parent->color_);
           RotateLeft(parent);
           parent = check_node->parent_;
           sibling = parent->right_;
         }
-        if (sibling->color_ == kBlack &&
-            (sibling->left_ == nullptr || sibling->left_->color_ == kBlack) &&
-            (sibling->right_ == nullptr || sibling->right_->color_ == kBlack)) {
-          sibling->color_ = kRed;
-          if (parent->color_ == kRed) {
-            parent->color_ = kBlack;
+        if (sibling->color_ == black &&
+            (sibling->left_ == nullptr || sibling->left_->color_ == black) &&
+            (sibling->right_ == nullptr || sibling->right_->color_ == black)) {
+          sibling->color_ = red;
+          if (parent->color_ == red) {
+            parent->color_ = black;
             break;
           }
           check_node = parent;
           parent = check_node->parent_;
         } else {
-          if (sibling->left_ != nullptr && sibling->left_->color_ == kRed &&
+          if (sibling->left_ != nullptr && sibling->left_->color_ == red &&
               (sibling->right_ == nullptr ||
-               sibling->right_->color_ == kBlack)) {
+               sibling->right_->color_ == black)) {
             std::swap(sibling->color_, sibling->left_->color_);
             RotateRight(sibling);
             sibling = parent->right_;
           }
-          sibling->right_->color_ = kBlack;
+          sibling->right_->color_ = black;
           sibling->color_ = parent->color_;
-          parent->color_ = kBlack;
+          parent->color_ = black;
           RotateLeft(parent);
           break;
         }
       } else {
-        tree_node *sibling = parent->left_;
-        if (sibling->color_ == kRed) {
+        Node *sibling = parent->left_;
+        if (sibling->color_ == red) {
           std::swap(sibling->color_, parent->color_);
           RotateRight(parent);
           parent = check_node->parent_;
           sibling = parent->left_;
         }
-        if (sibling->color_ == kBlack &&
-            (sibling->left_ == nullptr || sibling->left_->color_ == kBlack) &&
-            (sibling->right_ == nullptr || sibling->right_->color_ == kBlack)) {
-          sibling->color_ = kRed;
-          if (parent->color_ == kRed) {
-            parent->color_ = kBlack;
+        if (sibling->color_ == black &&
+            (sibling->left_ == nullptr || sibling->left_->color_ == black) &&
+            (sibling->right_ == nullptr || sibling->right_->color_ == black)) {
+          sibling->color_ = red;
+          if (parent->color_ == red) {
+            parent->color_ = black;
             break;
           }
           check_node = parent;
           parent = check_node->parent_;
         } else {
-          if (sibling->right_ != nullptr && sibling->right_->color_ == kRed &&
-              (sibling->left_ == nullptr || sibling->left_->color_ == kBlack)) {
+          if (sibling->right_ != nullptr && sibling->right_->color_ == red &&
+              (sibling->left_ == nullptr || sibling->left_->color_ == black)) {
             std::swap(sibling->color_, sibling->right_->color_);
             RotateLeft(sibling);
             sibling = parent->left_;
           }
-          sibling->left_->color_ = kBlack;
+          sibling->left_->color_ = black;
           sibling->color_ = parent->color_;
-          parent->color_ = kBlack;
+          parent->color_ = black;
           RotateRight(parent);
           break;
         }
@@ -572,96 +541,52 @@ class RedBlackTree {
     }
   }
 
-  tree_node *SearchMinimum(tree_node *node) const noexcept {
+  Node *SearchMinimum(Node *node) const {
     while (node->left_ != nullptr) {
       node = node->left_;
     };
     return node;
   }
 
-  tree_node *SearchMaximum(tree_node *node) const noexcept {
+  Node *SearchMaximum(Node *node) const {
     while (node->right_ != nullptr) {
       node = node->right_;
     };
     return node;
   }
 
-  int ComputeBlackHeight(const tree_node *node) const noexcept {
-    if (node == nullptr) {
-      return 0;
-    }
-    int left_height = ComputeBlackHeight(node->left_);
-    int right_height = ComputeBlackHeight(node->right_);
-    int add = node->color_ == kBlack ? 1 : 0;
-    if (left_height == -1 || right_height == -1 ||
-        left_height != right_height) {
-      return -1;
-    } else {
-      return left_height + add;
-    }
-  }
-
-  bool checkRedNodes(const tree_node *Node) const noexcept {
-    if (Node->color_ == kRed) {
-      if (Node->left_ != nullptr && Node->left_->color_ == kRed) {
-        return false;
-      }
-      if (Node->right_ != nullptr && Node->right_->color_ == kRed) {
-        return false;
-      }
-    }
-    if (Node->left_ != nullptr) {
-      if (checkRedNodes(Node->left_) == false) {
-        return false;
-      }
-    }
-    if (Node->right_ != nullptr) {
-      if (checkRedNodes(Node->right_) == false) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  struct RedBlackTreeNode {
-    RedBlackTreeNode()
+  struct Node {
+    Node()
         : parent_(nullptr),
           left_(this),
           right_(this),
           key_(key_type{}),
-          color_(kRed) {}
+          color_(red) {}
 
-    RedBlackTreeNode(const key_type &key)
+    Node(const key_type &key)
         : parent_(nullptr),
           left_(nullptr),
           right_(nullptr),
           key_(key),
-          color_(kRed) {}
+          color_(red) {}
 
-    RedBlackTreeNode(key_type &&key)
+    Node(key_type &&key)
         : parent_(nullptr),
           left_(nullptr),
           right_(nullptr),
           key_(std::move(key)),
-          color_(kRed) {}
+          color_(red) {}
 
-    RedBlackTreeNode(key_type key, tree_color color)
+    Node(key_type key, color color_)
         : parent_(nullptr),
           left_(nullptr),
           right_(nullptr),
           key_(key),
-          color_(color) {}
+          color_(color_) {}
 
-    void ToDefault() noexcept {
-      left_ = nullptr;
-      right_ = nullptr;
-      parent_ = nullptr;
-      color_ = kRed;
-    }
-
-    tree_node *NextNode() const noexcept {
-      tree_node *node = const_cast<tree_node *>(this);
-      if (node->color_ == kRed &&
+    Node *Next() const noexcept {
+      Node *node = const_cast<Node *>(this);
+      if (node->color_ == red &&
           (node->parent_ == nullptr || node->parent_->parent_ == node)) {
         node = node->left_;
       } else if (node->right_ != nullptr) {
@@ -670,7 +595,7 @@ class RedBlackTree {
           node = node->left_;
         }
       } else {
-        tree_node *parent = node->parent_;
+        Node *parent = node->parent_;
         while (node == parent->right_) {
           node = parent;
           parent = parent->parent_;
@@ -682,69 +607,27 @@ class RedBlackTree {
       return node;
     }
 
-    tree_node *PrevNode() const noexcept {
-      tree_node *node = const_cast<tree_node *>(this);
-      if (node->color_ == kRed &&
-          (node->parent_ == nullptr || node->parent_->parent_ == node)) {
-        node = node->right_;
-      } else if (node->left_ != nullptr) {
-        node = node->left_;
-        while (node->right_ != nullptr) {
-          node = node->right_;
-        }
-      } else {
-        tree_node *parent = node->parent_;
-        while (node == parent->left_) {
-          node = parent;
-          parent = parent->parent_;
-        }
-        if (node->left_ != parent) {
-          node = parent;
-        }
-      }
-
-      return node;
-    }
-    tree_node *parent_;
-    tree_node *left_;
-    tree_node *right_;
+    Node *parent_;
+    Node *left_;
+    Node *right_;
     key_type key_;
-    tree_color color_;
+    color color_;
   };
 
-  struct RedBlackTreeIterator {
+  struct Iterator {
     using iterator_category = std::forward_iterator_tag;
     using difference_type = std::ptrdiff_t;
-    using value_type = tree_type::key_type;
+    using value_type = tree::key_type;
     using pointer = value_type *;
     using reference = value_type &;
 
-    RedBlackTreeIterator() = delete;
-
-    explicit RedBlackTreeIterator(tree_node *node) : node_(node) {}
+    explicit Iterator(Node *node) : node_(node) {}
 
     reference operator*() const noexcept { return node_->key_; }
 
     iterator &operator++() noexcept {
-      node_ = node_->NextNode();
+      node_ = node_->Next();
       return *this;
-    }
-
-    iterator operator++(int) noexcept {
-      iterator tmp{node_};
-      ++(*this);
-      return tmp;
-    }
-
-    iterator &operator--() noexcept {
-      node_ = node_->PrevNode();
-      return *this;
-    }
-
-    iterator operator--(int) noexcept {
-      iterator tmp{node_};
-      --(*this);
-      return tmp;
     }
 
     bool operator==(const iterator &other) const noexcept {
@@ -755,44 +638,23 @@ class RedBlackTree {
       return node_ != other.node_;
     }
 
-    tree_node *node_;
+    Node *node_;
   };
 
-  struct RedBlackTreeIteratorConst {
+  struct IteratorConst {
     using iterator_category = std::forward_iterator_tag;
     using difference_type = std::ptrdiff_t;
-    using value_type = tree_type::key_type;
+    using value_type = tree::key_type;
     using pointer = const value_type *;
     using reference = const value_type &;
 
-    RedBlackTreeIteratorConst() = delete;
-
-    explicit RedBlackTreeIteratorConst(const tree_node *node) : node_(node) {}
-
-    RedBlackTreeIteratorConst(const iterator &it) : node_(it.node_) {}
+    IteratorConst(const iterator &it) : node_(it.node_) {}
 
     reference operator*() const noexcept { return node_->key_; }
 
     const_iterator &operator++() noexcept {
-      node_ = node_->NextNode();
+      node_ = node_->Next();
       return *this;
-    }
-
-    const_iterator operator++(int) noexcept {
-      const_iterator tmp{node_};
-      ++(*this);
-      return tmp;
-    }
-
-    const_iterator &operator--() noexcept {
-      node_ = node_->PrevNode();
-      return *this;
-    }
-
-    const_iterator operator--(int) noexcept {
-      const_iterator tmp{node_};
-      --(*this);
-      return tmp;
     }
 
     friend bool operator==(const const_iterator &it1,
@@ -805,18 +667,14 @@ class RedBlackTree {
       return it1.node_ != it2.node_;
     }
 
-    const tree_node *node_;
+    const Node *node_;
   };
 
-  tree_node *head_;
+  Node *head_;
   size_type size_;
-  Comparator cmp_;
+  Comparison cmp_;
 };
-
-#if defined(S21_CONTAINERS_TREE_TEST_HELPER)
-#include "s21_tree_test_helper.inc"
-#endif
 
 }  // namespace s21
 
-#endif  // S21_CONTAINERS_S21_CONTAINERS_S21_TREE_H_
+#endif  // CONTAINERS_S21_TREE_H_

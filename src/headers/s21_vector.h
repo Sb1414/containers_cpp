@@ -226,7 +226,7 @@ class vector {
   }
 
   template <typename... Args>
-  iterator emplace(const_iterator pos, Args &&... args) {
+  iterator emplace(const_iterator pos, Args &&...args) {
     size_type index = pos - buffer_;
     if (index > size_ + 1)
       throw std::out_of_range("going beyond the dimensions of the vector");
@@ -239,7 +239,7 @@ class vector {
   }
 
   template <typename... Args>
-  iterator emplace_back(Args &&... args) {
+  iterator emplace_back(Args &&...args) {
     for (auto &&item : {std::forward<Args>(args)...}) {
       push_back(item);
     }
