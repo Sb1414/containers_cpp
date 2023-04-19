@@ -1,7 +1,5 @@
-#ifndef S21_CONTAINERS_S21_CONTAINERS_S21_SET_H_
-#define S21_CONTAINERS_S21_CONTAINERS_S21_SET_H_
-
-#include <vector>
+#ifndef CONTAINERS_S21_SET_H_
+#define CONTAINERS_S21_SET_H_
 
 #include "s21_tree.h"
 
@@ -13,7 +11,7 @@ class set {
   using value_type = key_type;
   using reference = value_type &;
   using const_reference = const value_type &;
-  using tree_type = RedBlackTree<value_type>;
+  using tree_type = tree<value_type>;
   using iterator = typename tree_type::iterator;
   using const_iterator = typename tree_type::const_iterator;
   using size_type = std::size_t;
@@ -82,7 +80,7 @@ class set {
   }
 
   template <typename... Args>
-  std::vector<std::pair<iterator, bool>> emplace(Args &&... args) {
+  std::vector<std::pair<iterator, bool>> emplace(Args &&...args) {
     return tree_->EmplaceUnique(std::forward<Args>(args)...);
   }
 
@@ -92,4 +90,4 @@ class set {
 
 }  // namespace s21
 
-#endif  // S21_CONTAINERS_S21_CONTAINERS_S21_SET_H_
+#endif  // CONTAINERS_S21_SET_H_

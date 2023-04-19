@@ -291,6 +291,19 @@ TEST(List, Modifier_Unique) {
   EXPECT_EQ(s21_l.size(), std_l.size());
 }
 
+TEST(ListTest, Splice) {
+  s21::list<int> list1{1, 2, 3};
+  s21::list<int> list2{4, 5, 6};
+
+  auto it = (list1.begin()++)++;
+  list1.splice(it, list2);
+
+  EXPECT_EQ(list1.size(), 6);
+  EXPECT_EQ(list2.size(), 0);
+
+  EXPECT_TRUE(list2.empty());
+}
+
 TEST(List, Modifier_Sort) {
   s21::list<int> s21_l{1, -1, -14, 4};
   std::list<int> std_l{1, -1, -14, 4};
@@ -317,40 +330,40 @@ TEST(List, Modifier_Sort2) {
   }
 }
 
-// TEST(List, Emplace_Test) {
-//   std::list<int> l_std = {5, 6, 7, 8, 9, 10};
-//   s21::list<int> l_s21 = {5, 6, 7, 8, 9, 10};
+TEST(List, Emplace_Test) {
+  std::list<int> l_std = {5, 6, 7, 8, 9, 10};
+  s21::list<int> l_s21 = {5, 6, 7, 8, 9, 10};
 
-//   auto it1 = l_std.emplace(l_std.begin(), 2);
-//   auto it2 = l_s21.emplace(l_s21.begin(), 2);
+  auto it1 = l_std.emplace(l_std.begin(), 2);
+  auto it2 = l_s21.emplace(l_s21.begin(), 2);
 
-//   auto it = l_std.begin();
-//   while (it != l_std.end()) {
-//     EXPECT_EQ(*it1, *it2);
-//     ++it1, ++it2, ++it;
-//   }
-// }
+  auto it = l_std.begin();
+  while (it != l_std.end()) {
+    EXPECT_EQ(*it1, *it2);
+    ++it1, ++it2, ++it;
+  }
+}
 
-// TEST(List, Emplace_Back_Test) {
-//   s21::list<int> l_s21 = {};
-//   l_s21.emplace_back(1);
-//   l_s21.emplace_back(2);
-//   l_s21.emplace_back(3);
+TEST(List, Emplace_Back_Test) {
+  s21::list<int> l_s21 = {};
+  l_s21.emplace_back(1);
+  l_s21.emplace_back(2);
+  l_s21.emplace_back(3);
 
-//   EXPECT_DOUBLE_EQ(*(l_s21.begin()++), 1);
-//   EXPECT_DOUBLE_EQ(*(++l_s21.begin()++), 2);
-//   EXPECT_DOUBLE_EQ(*(++(++l_s21.begin())), 3);
-//   EXPECT_EQ(l_s21.size(), 3);
-// }
+  EXPECT_DOUBLE_EQ(*(l_s21.begin()++), 1);
+  EXPECT_DOUBLE_EQ(*(++l_s21.begin()++), 2);
+  EXPECT_DOUBLE_EQ(*(++(++l_s21.begin())), 3);
+  EXPECT_EQ(l_s21.size(), 3);
+}
 
-// TEST(List, Emplace_Front_Test) {
-//   s21::list<int> l_s21 = {};
-//   l_s21.emplace_front(3);
-//   l_s21.emplace_front(2);
-//   l_s21.emplace_front(1);
+TEST(List, Emplace_Front_Test) {
+  s21::list<int> l_s21 = {};
+  l_s21.emplace_front(3);
+  l_s21.emplace_front(2);
+  l_s21.emplace_front(1);
 
-//   EXPECT_DOUBLE_EQ(*(l_s21.begin()++), 1);
-//   EXPECT_DOUBLE_EQ(*(++l_s21.begin()++), 2);
-//   EXPECT_DOUBLE_EQ(*(++(++l_s21.begin())), 3);
-//   EXPECT_EQ(l_s21.size(), 3);
-// }
+  EXPECT_DOUBLE_EQ(*(l_s21.begin()++), 1);
+  EXPECT_DOUBLE_EQ(*(++l_s21.begin()++), 2);
+  EXPECT_DOUBLE_EQ(*(++(++l_s21.begin())), 3);
+  EXPECT_EQ(l_s21.size(), 3);
+}

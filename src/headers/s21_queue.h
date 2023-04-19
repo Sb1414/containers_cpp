@@ -45,7 +45,7 @@ class queue : protected s21::list<T> {
   }
 
   template <typename... Args>
-  void emplace_back(Args &&... args) {
+  void emplace_back(Args &&...args) {
     inheritance::emplace_back(std::forward<Args>(args)...);
   }
 };
