@@ -106,8 +106,16 @@ TEST(test, mapSize) {
   std::map<int, std::string> std_map{
       std::make_pair(42, "aaa"), std::make_pair(3, "bbb"),
       std::make_pair(33, "ccc"), std::make_pair(3, "ddd")};
-
+  my_map.max_size();
   ASSERT_EQ(my_map.size(), std_map.size());
+}
+
+TEST(test, Clear) {
+  s21::map<int, int> map{{1, 2}, {3, 4}, {5, 6}};
+  EXPECT_FALSE(map.empty());
+  map.clear();
+  EXPECT_TRUE(map.empty());
+  EXPECT_EQ(map.size(), 0);
 }
 
 TEST(test, mapClear) {

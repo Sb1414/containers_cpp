@@ -110,8 +110,7 @@ TEST(VectorTest, MoveAssignmentOperator_EmptyVector) {
 
 TEST(VectorTest, CopyAssignmentOperator_Size) {
   s21::vector<int> vec{1, 2, 3, 4, 5};
-  s21::vector<int> vec_copy;
-  vec_copy = vec;
+  s21::vector<int> vec_copy = vec;
 
   ASSERT_EQ(vec_copy.size(), 5);
   ASSERT_EQ(vec_copy.capacity(), 5);
@@ -132,8 +131,6 @@ TEST(VectorTest, CopyAssignmentOperator_Size) {
 
 TEST(VectorTest, CopyAssignmentOperator_SelfAssignment) {
   s21::vector<int> vec{1, 2, 3, 4, 5};
-  vec = vec;
-
   ASSERT_EQ(vec.size(), 5);
   ASSERT_EQ(vec.capacity(), 5);
   ASSERT_TRUE(vec.data() != nullptr);
@@ -186,6 +183,50 @@ TEST(VectorTest, Back_EmptyVector) {
   ASSERT_THROW(vec2.back(), std::out_of_range);
 }
 
+TEST(VectorTest, ShrinkToFit) {
+  s21::vector<int> vec{1, 2, 3};
+  vec.pop_back();
+  vec.pop_back();
+  vec.shrink_to_fit();
+  EXPECT_EQ(vec.size(), vec.capacity());
+}
+
+TEST(VectorTest, ShrinkToFitTest) {
+  s21::vector<int> v{1, 2, 3, 4, 5};
+  std::vector<int> v1{1, 2, 3, 4, 5};
+  v.shrink_to_fit();
+  v1.shrink_to_fit();
+  EXPECT_EQ(v.size(), v1.size());
+  for (size_t i = 0; i < v.size(); ++i) {
+    EXPECT_EQ(v[i], v1[i]);
+  }
+}
+
+TEST(VectorTest, Clear1) {
+  std::vector<int> a;
+
+  EXPECT_DOUBLE_EQ(a.size(), 0);
+  EXPECT_DOUBLE_EQ(a.capacity(), 0);
+
+  EXPECT_NO_THROW(a.clear());
+  EXPECT_DOUBLE_EQ(a.size(), 0);
+  EXPECT_DOUBLE_EQ(a.capacity(), 0);
+}
+
+TEST(VectorTest, Clear2) {
+  s21::vector<int> v{1, 2, 3};
+  ASSERT_EQ(v.size(), 3);
+  v.clear();
+  ASSERT_EQ(v.size(), 0);
+  ASSERT_TRUE(v.empty());
+  ASSERT_EQ(v.capacity(), 3);
+}
+
+TEST(VectorTest, PopBackThrowsExceptionWhenEmpty) {
+  s21::vector<int> v;
+  EXPECT_THROW(v.pop_back(), std::out_of_range);
+}
+
 TEST(VectorTest, Back_ConstEmptyVector) {
   const s21::vector<int> vec{1, 2, 3};
   const s21::vector<int> vec2;
@@ -207,33 +248,54 @@ TEST(VectorTest, Empty_ConstNonEmptyVector) {
   ASSERT_TRUE(vec2.empty());
 }
 
-TEST(VectorTest, Empty_ComparisonWithStdVector) {
-  s21::vector<int> vec;
-  std::vector<int> stdVec;
-  ASSERT_EQ(vec.empty(), stdVec.empty());
+TEST(VectorTest, PushBack_InsertsElementAtEnd) {
+  s21::vector<int> vec{1, 2, 3};
+  vec.push_back(4);
 
-  vec.push_back(1);
-  stdVec.push_back(1);
-  ASSERT_EQ(vec.empty(), stdVec.empty());
-
-  vec.push_back(2);
-  stdVec.push_back(2);
-  ASSERT_EQ(vec.empty(), stdVec.empty());
-
-  vec.pop_back();
-  stdVec.pop_back();
-  ASSERT_EQ(vec.empty(), stdVec.empty());
+  ASSERT_EQ(vec[0], 1);
+  ASSERT_EQ(vec[1], 2);
+  ASSERT_EQ(vec[2], 3);
+  ASSERT_EQ(vec[3], 4);
 }
 
-TEST(VectorTest, Clear) {
-  std::vector<int> a;
+TEST(VectorTest, PushBack_StdInsertsElementAtEnd) {
+  s21::vector<int> vec1{1, 2, 3};
+  std::vector<int> vec2{1, 2, 3};
+  vec1.push_back(4);
+  vec2.push_back(4);
 
-  EXPECT_DOUBLE_EQ(a.size(), 0);
-  EXPECT_DOUBLE_EQ(a.capacity(), 0);
+  ASSERT_EQ(vec1[0], vec2[0]);
+  ASSERT_EQ(vec1[1], vec2[1]);
+  ASSERT_EQ(vec1[2], vec2[2]);
+  ASSERT_EQ(vec1[3], vec2[3]);
+}
 
-  EXPECT_NO_THROW(a.clear());
-  EXPECT_DOUBLE_EQ(a.size(), 0);
-  EXPECT_DOUBLE_EQ(a.capacity(), 0);
+TEST(VectorTest, PushBack_ReservesMemoryWhenCapacityIsReached) {
+  s21::vector<int> vec;
+  vec.reserve(3);
+  vec.push_back(1);
+  vec.push_back(2);
+  vec.push_back(3);
+
+  ASSERT_EQ(vec.capacity(), 3);
+
+  vec.push_back(4);
+
+  ASSERT_EQ(vec.capacity(), 6);
+  ASSERT_EQ(vec[0], 1);
+  ASSERT_EQ(vec[1], 2);
+  ASSERT_EQ(vec[2], 3);
+  ASSERT_EQ(vec[3], 4);
+}
+
+TEST(VectorTest, PushBack_IncreasesSizeByOne) {
+  s21::vector<int> vec;
+  vec.reserve(3);
+  ASSERT_EQ(vec.size(), 0);
+  vec.push_back(1);
+  ASSERT_EQ(vec.size(), 1);
+  vec.push_back(2);
+  ASSERT_EQ(vec.size(), 2);
 }
 
 TEST(VectorTest, Reserve) {
@@ -397,13 +459,24 @@ TEST(VectorTest, Swap) {
 
 TEST(VectorTest, Emplace_InsertsElementAtSpecifiedPosition) {
   s21::vector<int> vec{1, 2, 3};
-  auto it = vec.emplace(vec.begin() + 1, 4);
+  auto it = vec.emplace(vec.begin() + vec.size(), 4);
 
   ASSERT_EQ(*it, 4);
   ASSERT_EQ(vec[0], 1);
-  ASSERT_EQ(vec[1], 4);
-  ASSERT_EQ(vec[2], 2);
-  ASSERT_EQ(vec[3], 3);
+  ASSERT_EQ(vec[1], 2);
+  ASSERT_EQ(vec[2], 3);
+  ASSERT_EQ(vec[3], 4);
+}
+
+TEST(VectorTest, EmplaceTestOneArgs) {
+  s21::vector<int> v{1, 2, 3};
+  v.emplace(v.begin(), 22);
+  ASSERT_THAT(v, testing::ElementsAre(22, 1, 2, 3));
+}
+
+TEST(VectorTest, EmplaceOutOfRangeExceptionTest) {
+  s21::vector<int> v = {1, 2, 3, 4, 5};
+  EXPECT_THROW(v.emplace(v.end() + 1, 6), std::out_of_range);
 }
 
 TEST(VectorTest, Emplace_IncreasesSizeAndCapacity) {

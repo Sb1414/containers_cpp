@@ -1,5 +1,5 @@
-#ifndef SRC_S21_LIST_H
-#define SRC_S21_LIST_H
+#ifndef CONTAINERS_S21_LIST_H
+#define CONTAINERS_S21_LIST_H
 
 namespace s21 {
 template <typename Type>
@@ -258,13 +258,22 @@ class list {
 
   const_iterator insert(const_iterator pos, const_reference value) const {
     return const_cast<list *>(this)->insert(pos, value);
+    // используется const_cast, чтобы убрать const квалификатор с this указателя и вызвать неконстантную версию метода insert()
   }
 
-  void erase(iterator pos) noexcept {
-    if (pos != end()) {
-      pos.node_->prev_->next_ = pos.node_->next_;
-      pos.node_->next_->prev_ = pos.node_->prev_;
-      delete pos.node_;
+  // добавляет в список элементы из диапазона [first, last], начиная с позиции, на которую указывает итератор pos
+  template <typename InputIterator>
+  void insert(const_iterator pos, InputIterator first, InputIterator last) { 
+    for (auto it = first; it != last; ++it) { // Итератор it инициализируется значением first и продвигается до last
+      insert(pos, *it); // добавление элемента в список на позицию, указанную итератором pos
+    }
+  }
+
+  void erase(iterator pos) noexcept { // передача итератора на удаляемый элемент
+    if (pos != end()) { // если это не последний элемент списка
+      pos.node_->prev_->next_ = pos.node_->next_; // изменение указателя на следующий элемент у предыдущего элемента, чтобы он указывал на следующий элемент после удаляемого
+      pos.node_->next_->prev_ = pos.node_->prev_; // изменение указателя на предыдущий элемент у следующего элемента, чтобы он указывал на предыдущий элемент перед удаляемым
+      delete pos.node_; // освобождение памяти, занятой удаляемым элементом
       --size_;
     }
   }
@@ -321,161 +330,143 @@ class list {
     std::swap(size_, other.size_);
   }
 
-  void splice(const_iterator pos, list &other) {
-    if (!other.empty()) {
-      iterator it = other.begin();
-      const_iterator other_end = other.end();
-      while (it != other_end) {
-        const_iterator const_pos = pos;
-        insert(const_pos, *it);
-        ++it;
-      }
-      other.head_->next_ = other.tail_;
-      other.tail_->prev_ = other.head_;
+  void splice(const_iterator pos, list &other) noexcept {
+    if (!other.empty()) { // проверка, что список other не пустой
+      // создание итератора it_current, указывающего на узел, на который указывает итератор pos
+      // const_cast используется, чтобы убрать const-квалификатор у указателя, так как it_current - не const_iterator, а обычный итератор.
+      iterator it_current{const_cast<node_type *>(pos.node_)}; 
+      iterator it_other = other.end(); // создание итератора it_other, указывающего на последний элемент списка other
+      
+      // установка связи между узлами. Предпоследний узел списка other указывает на тот же узел, на который указывает предыдущий узел списка it_current
+      it_other.node_->next_->prev_ = it_current.node_->prev_;
+      it_other.node_->prev_->next_ = it_current.node_; // Последний узел списка other указывает на узел it_current
+
+      // установка связи между узлами. Предыдущий узел it_current указывает на тот же узел, на который указывал предпоследний узел списка other
+      it_current.node_->prev_->next_ = it_other.node_->next_;
+      it_current.node_->prev_ = it_other.node_->prev_; // Предыдущий узел it_current указывает на предпоследний узел списка other
+
+      size_ += other.size(); // увеличение размера списка this на размер списка other
+
       other.size_ = 0;
+      other.head_->next_ = other.head_; // установка связи между узлами списка other
+      other.head_->prev_ = other.head_;
     }
   }
 
   void merge(list &other) {
-    auto it1 = begin();
-    auto it2 = other.begin();
+    auto it1 = begin(); // итератор, указывающий на начало текущего списка
+    auto it2 = other.begin(); // итератор, указывающий на начало списка other
 
-    while (it1 != end() && it2 != other.end()) {
+    while (it1 != end() && it2 != other.end()) { // пока не будет достигнут конец текущего списка или списка other
+      // если значение, на которое указывает it1, меньше значения, на которое указывает it2, то переходим к следующему элементу списка it1
       if (*it1 < *it2) {
         ++it1;
       } else {
+        // вставляем элемент, на который указывает it2, перед элементом, на который указывает it1
         insert(it1, *it2);
-        ++it2;
+        ++it2; //  переходим к следующему элементу списка other с помощью it2
       }
     }
 
     while (it2 != other.end()) {
+      // вставляем в конец текущего списка все оставшиеся элементы списка other
       push_back(*it2);
       ++it2;
     }
-
+    // очищаем список other
     other.clear();
   }
 
+  // объявление функции reverse без параметров и гарантией безопасности (noexcept)
   void reverse() noexcept {
-    auto begin_iterator = begin();
-    auto end_iterator = end();
+    auto begin_iterator = begin(); // иттератор на начало списка
+    auto end_iterator = end(); // иттератор на конец списка
+    // цикл будет выполняться до тех пор, пока не будут достигнуты begin и end
     while (begin_iterator != end_iterator) {
+      // меняем местами указатели на следующий и предыдущий элементы для текущего элемента, на который указывает begin_iterator
       begin_iterator.node_->SwapNextPrev();
-      --begin_iterator;
+      --begin_iterator; // перемещаем итератор на предыдущий элемент списка
     }
-    head_->SwapNextPrev();
+    head_->SwapNextPrev(); // меняем местами указатели на следующий и предыдущий элементы у head
   }
 
+  // удаляет последовательные повторяющиеся элементы
   void unique() {
-    iterator begin_it = begin();
-    iterator end_it = end();
-    iterator prev_it = begin_it;
-    ++begin_it;
-    for (; begin_it != end_it; ++begin_it) {
-      if (*begin_it == *prev_it) {
-        erase(begin_it);
-        begin_it = prev_it;
+    iterator begin_it = begin(); //  создание итератора, указывающего на начало списка
+    iterator end_it = end(); // создание итератора, указывающего на конец списка
+    iterator prev_it = begin_it; // создание итератора, указывающего на начало списка
+    ++begin_it; //  перемещаем итератор на следующий элемент списка
+    for (; begin_it != end_it; ++begin_it) { // цикл будет выполняться от начала до конца списка
+      if (*begin_it == *prev_it) { //  проверяем, равны ли значения текущего и предыдущего элементов списка
+        erase(begin_it); // удаляем текущий элемент из списка
+        begin_it = prev_it; // устанавливаем begin_it на предыдущий элемент списка
       } else {
+        // если значения не равны, перемещаем prev_it на следующий элемент списка
         ++prev_it;
       }
     }
   }
 
-  void sort() { QuickSort(begin(), --end(), size_); }
-
-  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PART 3
-  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  template <typename... Args>
-  iterator emplace(const_iterator pos, Args &&... args) noexcept {
-    node_type *new_node;
-    iterator it_{const_cast<node_type *>(pos.node_)};
-    for (auto item : {std::forward<Args>(args)...}) {
-      new_node = new node_type(std::move(item));
-      new_node->next_ = it_.node_;
-      new_node->prev_ = it_.node_->prev_;
-      it_.node_->prev_->next_ = new_node;
-      it_.node_->prev_ = new_node;
-      ++size_;
+  // сортировка вставками
+  void sort() {
+    // если в списке меньше двух элементов, то сортировать не нужно
+    if (size() < 2) {
+      return;
     }
-    return iterator(new_node);
+    auto it = begin(); // создание итератора, указывающего на начало списка
+    auto end_it = end(); // создание итератора, указывающего на конец списка
+    while (it != end_it) { // цикл будет выполняться от начала до конца списка
+      auto current = *it; // создание переменной, содержащей значение текущего элемента списка
+      auto next_it = std::next(it); // создание итератора, указывающего на следующий элемент списка
+      auto insert_it = it; // создание итератора, указывающего на текущий элемент списка
+      // перемещаем insert_it к началу списка до тех пор, пока значение предыдущего элемента списка больше текущего
+      while (insert_it != begin() && *std::prev(insert_it) > current) {
+        --insert_it;
+      }
+      if (insert_it == it) { // если текущий элемент находится на своем месте
+        it = next_it; // перемещаем it на следующий элемент списка и продолжаем цикл
+        continue;
+      }
+      erase(it); // удаляем текущий элемент списка
+      insert(insert_it, current); // вставляем текущий элемент списка на новое место
+      it = next_it; // перемещаем it на следующий элемент списка
+    }
+  }
+
+  // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PART 3 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  // emplace создает новый узел со значением, переданным в качестве аргументов Args, и вставляет его в позицию, указанную в качестве pos
+  // принимает переменное число аргументов Args
+  template <typename... Args>
+  iterator emplace(const_iterator pos, Args &&...args) noexcept {
+    node_type *new_node; // создание указателя на новый узел
+    iterator it_{const_cast<node_type *>(pos.node_)}; // создание итератора, который указывает на узел, переданный в качестве pos
+    for (auto item : {std::forward<Args>(args)...}) { // цикл, который перебирает каждый элемент из списка переданных аргументов
+      new_node = new node_type(std::move(item)); // создание нового узла с использованием конструктора перемещения
+      new_node->next_ = it_.node_; // установка указателя следующего узла нового узла на узел, на который указывает итератор
+      new_node->prev_ = it_.node_->prev_; // установка указателя предыдущего узла нового узла на узел, который предшествует узлу, на который указывает итератор
+      it_.node_->prev_->next_ = new_node; // обновление указателя следующего узла для предыдущего узла, который предшествует узлу, на который указывает итератор, чтобы он указывал на новый узел
+      it_.node_->prev_ = new_node; // обновление указателя предыдущего узла для узла, чтобы он указывал на новый узел
+      ++size_; // увеличение размера списка
+    }
+    return iterator(new_node); // возврат итератора, указывающего на созданный узел
   }
 
   template <typename... Args>
-  void emplace_back(Args &&... args) {
-    emplace(end(), std::forward<Args>(args)...);
+  void emplace_back(Args &&...args) {
+    emplace(end(), std::forward<Args>(args)...); 
+    // std::forward используется для передачи аргументов по ссылке 
+    // Она используется в шаблонном коде для того, чтобы сохранить rvalue-свойства аргумента (например, перемещение) 
+    // при передаче его дальше по цепочке вызовов, когда мы не знаем, какой тип аргумента и как он будет использоваться 
+    // внутри вызываемой функции. Это позволяет избежать ненужных копирований и перемещений объектов
   }
 
   template <typename... Args>
-  void emplace_front(Args &&... args) {
+  void emplace_front(Args &&...args) {
     emplace(begin(), std::forward<Args>(args)...);
   }
 
  private:
-  // удаляет узел из списка, отсоединяя его от соседних элементов (merge)
-  void UnAttachNode(node_type *node) noexcept {
-    node->prev_->next_ = node->next_;
-    node->next_->prev_ = node->prev_;
-    node->next_ = node;
-    node->prev_ = node;
-  }
-
-  // вставляет новый узел перед заданным элементом (merge)
-  void InsertNodeBefore(node_type *pos_node, node_type *new_node) noexcept {
-    new_node->prev_ = pos_node->prev_;
-    new_node->next_ = pos_node;
-    pos_node->prev_->next_ = new_node;
-    pos_node->prev_ = new_node;
-  }
-
-  void QuickSort(iterator left, iterator right, size_type list_size) {
-    if (left != right && list_size > 1) {
-      iterator swap_ = left;
-      iterator pivot_ = left;
-      iterator l_tmp = left;
-      iterator r_tmp = right;
-      --swap_;
-      --pivot_;
-      size_type pos = 0;
-      while (pos < list_size / 2) {
-        ++pivot_;
-        ++pos;
-      }
-      value_type pivot = *pivot_;
-      pos = 0;
-      pivot_.node_->SwapValues(right.node_);
-      while (l_tmp != r_tmp) {
-        if (*l_tmp < pivot) {
-          ++swap_;
-          ++pos;
-          l_tmp.node_->SwapValues(swap_.node_);
-          ++l_tmp;
-        } else if (*l_tmp == pivot) {
-          --r_tmp;
-          l_tmp.node_->SwapValues(r_tmp.node_);
-        } else {
-          ++l_tmp;
-        }
-      }
-      iterator next_step_left = swap_;
-      size_type next_step_left_size = pos;
-      size_type next_step_right_size = list_size - pos - 1;
-      ++swap_;
-      while (r_tmp != right) {
-        swap_.node_->SwapValues(r_tmp.node_);
-        ++swap_;
-        ++r_tmp;
-        --next_step_right_size;
-      }
-      swap_.node_->SwapValues(right.node_);
-      ++swap_;
-      iterator next_step_right = swap_;
-      QuickSort(left, next_step_left, next_step_left_size);
-      QuickSort(next_step_right, right, next_step_right_size);
-    }
-  }
-
   node_type *head_;
   node_type *tail_;
   size_type size_;
@@ -483,4 +474,4 @@ class list {
 
 }  // namespace s21
 
-#endif  // SRC_S21_LIST_H
+#endif  // CONTAINERS_S21_LIST_H

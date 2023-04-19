@@ -1,5 +1,5 @@
-#ifndef S21_CONTAINERS_S21_CONTAINERS_S21_MAP_H_
-#define S21_CONTAINERS_S21_CONTAINERS_S21_MAP_H_
+#ifndef CONTAINERS_S21_MAP_H_
+#define CONTAINERS_S21_MAP_H_
 
 #include <stdexcept>
 
@@ -22,7 +22,7 @@ class map {
     }
   };
 
-  using tree_type = RedBlackTree<value_type, MapValueComparator>;
+  using tree_type = tree<value_type, MapValueComparator>;
   using iterator = typename tree_type::iterator;
   using const_iterator = typename tree_type::const_iterator;
   using size_type = std::size_t;
@@ -57,10 +57,8 @@ class map {
   mapped_type &at(const key_type &key) {
     value_type search_pair(key, mapped_type{});
     iterator it_search = tree_->Find(search_pair);
-
     if (it_search == end()) {
-      throw std::out_of_range(
-          "s21::map::at: No element exists with key equivalent to key");
+      throw std::out_of_range("there is no such key");
     } else {
       return (*it_search).second;
     }
@@ -133,7 +131,7 @@ class map {
   }
 
   template <typename... Args>
-  std::vector<std::pair<iterator, bool>> emplace(Args &&... args) {
+  std::vector<std::pair<iterator, bool>> emplace(Args &&...args) {
     return tree_->EmplaceUnique(std::forward<Args>(args)...);
   }
 
@@ -143,4 +141,4 @@ class map {
 
 }  // namespace s21
 
-#endif  // S21_CONTAINERS_S21_CONTAINERS_S21_MAP_H_
+#endif  // CONTAINERS_S21_MAP_H_

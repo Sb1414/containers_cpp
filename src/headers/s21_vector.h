@@ -1,11 +1,5 @@
-#ifndef S21_CONTAINERS_S21_CONTAINERS_S21_VECTOR_H_
-#define S21_CONTAINERS_S21_CONTAINERS_S21_VECTOR_H_
-
-#include <algorithm>
-#include <initializer_list>
-#include <limits>
-#include <utility>
-
+#ifndef SRC_S21_VECTOR_H_
+#define SRC_S21_VECTOR_H_
 namespace s21 {
 
 template <typename T>
@@ -137,96 +131,102 @@ class vector {
     return std::numeric_limits<size_type>::max() / sizeof(value_type);
   }
 
-  // выделяет хранилище элементов размера и копирует текущие элементы массива в новый выделенный массив
+  // выделяет хранилище элементов размера и копирует текущие элементы массива в
+  // новый выделенный массив
   void reserve(size_type size) {
     if (size > max_size())
-      throw std::length_error("The size of the vector cannot exceed the maximum size");
+      throw std::length_error(
+          "The size of the vector cannot exceed the maximum size");
     if (size > capacity()) {
-        value_type *new_data = new value_type[size];
-        for (size_type i = 0; i < size_; i++) {
-            new_data[i] = std::move(buffer_[i]);
-        }
-        delete[] buffer_;
-        buffer_ = new_data;
-        capacity_ = size;
+      value_type *new_data = new value_type[size];
+      for (size_type i = 0; i < size_; i++) {
+        new_data[i] = std::move(buffer_[i]);
+      }
+      delete[] buffer_;
+      buffer_ = new_data;
+      capacity_ = size;
     }
   }
 
-  // возвращает количество элементов, которые могут храниться в выделенной в данный момент памяти
+  // возвращает количество элементов, которые могут храниться в выделенной в
+  // данный момент памяти
   size_type capacity() const { return capacity_; }
 
-  void clear() { 
-    for (size_type i = 0; i < size_; ++i) {
-        buffer_[i].~value_type(); // вызов деструкторов для элементов
+  void shrink_to_fit() {
+    if (size_ == capacity_) {
+      return;
     }
-    size_ = 0; 
+    value_type *new_buffer = new value_type[size_];
+    for (size_type i = 0; i < size_; ++i) {
+      new (new_buffer + i) value_type(std::move(buffer_[i]));
+    }
+    std::swap(buffer_, new_buffer);
+    capacity_ = size_;
+    delete[] new_buffer;
   }
 
-  // вставляет элемент со значением value перед итератором pos
+  void clear() {
+    for (size_type i = 0; i < size_; ++i) {
+      buffer_[i].~value_type();  // вызов деструкторов для элементов
+    }
+    size_ = 0;
+  }
+
   iterator insert(const_iterator pos, value_type &&value) {
-    size_type index = pos - buffer_; // индекс вставляемого элемента
+    size_type index = pos - buffer_;
     if (index > size_)
       throw std::out_of_range("going beyond the dimensions of the vector");
-    if (size_ == capacity_) { // размер вектора равен ёмкости
-      reserve(2 * capacity_); // выделяется новая память с удвоенной ёмкостью
-      // Удвоение памяти используется для того, чтобы уменьшить количество перераспределений, 
-      // которые могут быть очень дорогостоящими в случае, если размер контейнера увеличивается поштучно
+    if (size_ == capacity_) {
+      reserve(2 * capacity_);
     }
     for (size_type i = size_; i > index; --i) {
-      buffer_[i] = std::move(buffer_[i - 1]); 
-      // Сдвиг элементов вектора с индексами от index до size_ (исключая index) на одну позицию вправо.
+      buffer_[i] = std::move(buffer_[i - 1]);
     }
-    buffer_[index] = std::move(value); // Присвоение элементу с индексом index значения, передаваемого в функцию
-    ++size_; // Увеличение размера вектора
-    return iterator(buffer_ + index); // Возврат итератора на элемент, который был вставлен
+    buffer_[index] = std::move(value);
+    ++size_;
+    return iterator(buffer_ + index);
   }
 
-  // стирает элемент в позиции
   iterator erase(const_iterator pos) {
-    size_type index = pos - buffer_; // индекс элемента в векторе, который нужно удалить
-    if (index >= size_) // индекс больше или равен размеру вектора
-      throw std::out_of_range("index out of range");
-    for (size_type i = index; i < size_ - 1; ++i) { // перебираем элементы вектора, начиная с удаленного элемента
-      buffer_[i] = std::move(buffer_[i + 1]); // перемещаем их на одну позицию влево
+    size_type index = pos - buffer_;
+    if (index >= size_) throw std::out_of_range("index out of range");
+    for (size_type i = index; i < size_ - 1; ++i) {
+      buffer_[i] = std::move(buffer_[i + 1]);
     }
-    --size_; // уменьшаем размер вектора
-    return iterator(buffer_ + index); // возвращаем итератор на удаленный элемент
+    --size_;
+    return iterator(buffer_ + index);
   }
 
-  // метод добавления элемента в конец вектора
   void push_back(const_reference value) {
-    if (size_ == capacity_) { // Если количество элементов в векторе равно емкости => не хватает места
-      reserve(2 * capacity_); // увеличиваем capacity в два раза, если не хватает места
+    if (size_ == capacity_) {
+      reserve(2 * capacity_);
     }
-    buffer_[size_++] = value; // добавляем элемент в конец и увеличиваем size_
+    buffer_[size_++] = value;
   }
 
   void pop_back() {
     if (size_ == 0) {
-        throw std::out_of_range("vector is empty");
+      throw std::out_of_range("vector is empty");
     }
     --size_;
   }
 
-  void swap(vector& other) {
-    // Swap capacity
+  void swap(vector &other) {
     size_type tmp_cap = capacity_;
     capacity_ = other.capacity_;
     other.capacity_ = tmp_cap;
 
-    // Swap size
     size_type tmp_size = size_;
     size_ = other.size_;
     other.size_ = tmp_size;
 
-    // Swap buffer
     iterator tmp_buf = buffer_;
     buffer_ = other.buffer_;
     other.buffer_ = tmp_buf;
   }
 
   template <typename... Args>
-  iterator emplace(const_iterator pos, Args&&... args) {
+  iterator emplace(const_iterator pos, Args &&...args) {
     size_type index = pos - buffer_;
     if (index > size_ + 1)
       throw std::out_of_range("going beyond the dimensions of the vector");
@@ -239,14 +239,14 @@ class vector {
   }
 
   template <typename... Args>
-  iterator emplace_back(Args &&... args) {
-    for (auto &&item : {std::forward<Args>(args)...}) { // Итерируемся по списку аргументов
-      push_back(item); // Добавляем элементы в конец вектора
+  iterator emplace_back(Args &&...args) {
+    for (auto &&item : {std::forward<Args>(args)...}) {
+      push_back(item);
     }
-    return end() - 1; // Возвращаем итератор на последний добавленный элемент
+    return end() - 1;
   }
 };
 
 }  // namespace s21
 
-#endif  // S21_CONTAINERS_S21_CONTAINERS_S21_VECTOR_H_
+#endif  // SRC_S21_VECTOR_H_
