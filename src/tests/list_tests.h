@@ -43,22 +43,6 @@ TEST(List, Constructor_Copy) {
     ++it1, ++it2;
   }
 }
-// TEST(List, Constructor_Move) {
-//   s21::list<char> s21_l_1 = {'a', 'b', 'c', 'd'};
-//   std::list<char> std_l_1 = {'a', 'b', 'c', 'd'};
-//   s21::list<char> s21_l_2 = std::move(s21_l_1);
-//   std::list<char> std_l_2 = std::move(std_l_1);
-
-//   EXPECT_EQ(s21_l_2.size(), std_l_2.size());
-//   EXPECT_EQ(s21_l_1.size(), std_l_1.size());
-//   EXPECT_EQ(s21_l_1.empty(), std_l_1.empty());
-//   auto it1 = s21_l_2.begin();
-//   auto it2 = std_l_2.begin();
-//   while (it1 != s21_l_2.end()) {
-//     EXPECT_EQ(*it1, *it2);
-//     ++it1, ++it2;
-//   }
-// }
 
 TEST(ListConstructor, MoveConstructor) {
   s21::list<int> other_list = {1, 2, 3};
