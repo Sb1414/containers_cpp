@@ -31,10 +31,6 @@ class list {
     explicit ListNode(value_type &&value) noexcept
         : next_(nullptr), prev_(nullptr), value_(std::move(value)) {}
 
-    void SwapValues(node_type *other_node) noexcept {
-      std::swap(value_, other_node->value_);
-    }
-
     void SwapNextPrev() noexcept { std::swap(next_, prev_); }
 
     node_type *next_;   // указатель на следующий узел
@@ -191,7 +187,8 @@ class list {
   ~list() {
     clear();
     delete head_;
-    head_ = nullptr;
+    delete tail_;
+    head_ = tail_ = nullptr;
   }
 
   reference front() noexcept { return *begin(); }
