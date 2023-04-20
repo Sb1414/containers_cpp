@@ -24,7 +24,6 @@ class vector {
   vector(size_type size) {
     this->size_ = size;
     capacity_ = size;
-    buffer_ = new value_type[size_];
     if (size > 0) {
       buffer_ = new value_type[capacity_];
     }
